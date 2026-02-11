@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 홈</title>
+
+    <!-- Critical CSS for instant banner display -->
+    <style>
+        /* Banner critical styles - loaded before any external CSS */
+        #trial-banner-section {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        #trial-banner-section.hide {
+            display: none !important;
+        }
+        .krs-banner {
+            background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 40%, #4C1D95 100%);
+            border-radius: 1.25rem;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            cursor: pointer;
+            color: white;
+        }
+    </style>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1', paper: '#FDFBF7',
+                            report: { bg: '#F8FAFC', accent: '#4F46E5', dark: '#1E293B' },
+                            tech: { dark: '#1e293b', purple: '#8b5cf6', blue: '#3b82f6', cyan: '#06b6d4' }
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+                        'floating': '0 20px 25px -5px rgba(255, 159, 67, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        /* === KRS Trial Banner === */
+        .krs-banner {
+            background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 40%, #4C1D95 100%);
+            border-radius: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1.5px solid rgba(255,255,255,0.12);
+            box-shadow: 0 4px 24px rgba(109, 40, 217, 0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .krs-banner:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 40px rgba(109, 40, 217, 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+        .krs-banner:active {
+            transform: translateY(0);
+        }
+        .krs-banner::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -10%;
+            width: 220px;
+            height: 220px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 50%;
+        }
+        .krs-banner::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 10%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 50%;
+        }
+
+        /* === 배너 섹션 표시/숨김 처리 === */
+        /* trial-banner는 기본 표시, 다른 상태일 때만 숨김 */
+        #trial-banner-section {
+            display: block;
+            opacity: 1;
+            visibility: visible;
+        }
+        #trial-banner-section.hide {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+        /* trial-end-banner는 기본 숨김 */
+        #trial-end-banner-section {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
+        #trial-end-banner-section.show {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        /* === Netflix Style KRS Banner (무체 종료) === */
+        .netflix-krs-banner {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e293b 100%);
+            border-radius: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .netflix-krs-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(236, 72, 153, 0.15) 0%, transparent 50%);
+        }
+        .netflix-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .netflix-badge-hot {
+            display: inline-block;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        .netflix-title {
+            font-size: 36px;
+            font-weight: 900;
+            line-height: 1.2;
+            text-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+        .netflix-highlight {
+            background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 42px;
+        }
+        .netflix-subtitle {
+            font-size: 18px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.85);
+        }
+        .netflix-visual {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            flex-shrink: 0;
+        }
+        .netflix-circle-1 {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        .netflix-circle-2 {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            top: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: pulse 3s ease-in-out infinite 0.5s;
+        }
+        .netflix-emoji {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            z-index: 10;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+        .netflix-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+        }
+        .netflix-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+        .netflix-feature-item:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-2px);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+        .netflix-feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+        .netflix-feature-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 2px;
+        }
+        .netflix-feature-desc {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+        }
+        .netflix-btn-primary {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+        .netflix-btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(139, 92, 246, 0.6);
+        }
+        .netflix-btn-primary:active {
+            transform: translateY(-1px);
+        }
+        .netflix-btn-secondary {
+            padding: 18px 32px;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.9);
+            font-size: 16px;
+            font-weight: 600;
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .netflix-btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.3);
+        }
+        @media (max-width: 768px) {
+            .netflix-title { font-size: 28px; }
+            .netflix-highlight { font-size: 32px; }
+            .netflix-subtitle { font-size: 15px; }
+            .netflix-features { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .netflix-btn-primary, .netflix-btn-secondary {
+                width: 100%;
+                padding: 16px 24px;
+            }
+        }
+
+        /* === Horizontal Scroll Section === */
+        .scroll-section {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        .scroll-section::-webkit-scrollbar { display: none; }
+        .scroll-section { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* === Book Card === */
+        .home2-book-card {
+            flex-shrink: 0;
+            width: 140px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            scroll-snap-align: start;
+        }
+        .home2-book-card:hover {
+            transform: translateY(-5px);
+        }
+        .home2-book-cover {
+            width: 140px;
+            height: 190px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .home2-book-cover .book-emoji {
+            font-size: 3.5rem;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+        }
+
+        /* === Video Card === */
+        .home2-video-card {
+            flex-shrink: 0;
+            width: 210px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            scroll-snap-align: start;
+        }
+        .home2-video-card:hover {
+            transform: translateY(-5px);
+        }
+        .home2-video-thumb {
+            width: 210px;
+            height: 126px;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .home2-video-thumb .video-emoji {
+            font-size: 2.8rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+        .play-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.15);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .home2-video-card:hover .play-overlay {
+            opacity: 1;
+        }
+
+        /* === Section Header === */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        /* === Weekly Progress === */
+        .weekly-progress {
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            overflow: hidden;
+        }
+        .weekly-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #FF9F43, #F368E0);
+            transition: width 0.5s ease;
+        }
+
+        /* === Modal === */
+        .home2-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            animation: modalFadeIn 0.2s ease;
+        }
+        .home2-modal {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            text-align: center;
+            animation: modalSlideUp 0.3s ease;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slideDown {
+            animation: slideDown 0.4s ease-out;
+        }
+
+        /* === Mobile === */
+        @media (max-width: 768px) {
+            main.flex-1 { padding-top: 4rem; }
+            .home2-book-card { width: 120px; }
+            .home2-book-cover { width: 120px; height: 164px; border-radius: 12px; }
+            .home2-book-cover .book-emoji { font-size: 2.8rem; }
+            .home2-video-card { width: 175px; }
+            .home2-video-thumb { width: 175px; height: 105px; border-radius: 12px; }
+            .scroll-section { gap: 12px; }
+        }
+    </style>
+</head>
+<body class="bg-brand-bg font-sans text-gray-800 h-screen overflow-hidden">
+    <!-- Mobile hamburger -->
+    <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars text-gray-600 text-lg"></i>
+    </button>
+
+    <!-- Sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="flex w-full h-full">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 h-full overflow-y-auto px-6 pt-4 pb-8 md:px-12">
+          <div class="max-w-[1400px] mx-auto">
+
+            <!-- ===== Header ===== -->
+            <header class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="font-noto text-2xl md:text-3xl text-gray-800">
+                        <span data-user-name>우희</span>님, 안녕! 👋
+                    </h2>
+                    <p class="text-gray-500 mt-1">오늘도 즐거운 독서를 시작해볼까요?</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative hide-mobile">
+                        <input type="text" placeholder="책 제목, 작가 검색..." class="w-64 h-12 bg-white/80 border border-gray-200 rounded-2xl px-5 pr-12 outline-none focus:border-brand-primary focus:bg-white transition-all text-sm">
+                        <i class="fa-solid fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ===== KRS 1주일 무료체험 배너 ===== -->
+            <section class="mb-8" id="trial-banner-section">
+                <div class="krs-banner p-6 md:p-7 text-white" onclick="showTrialModal()">
+                    <div class="relative z-10 flex items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-white/20 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full">AI 독서 프로그램</span>
+                                <span class="text-xs font-extrabold px-3 py-1 rounded-full shadow-sm" style="background: #FBBF24; color: #4C1D95;">일주일 무료 체험!</span>
+                            </div>
+                            <h3 class="font-noto text-2xl md:text-3xl mb-2 font-black drop-shadow-sm">KRS 무료체험 신청</h3>
+                            <p class="text-sm md:text-base opacity-90 leading-relaxed">
+                                맞춤형 커리큘럼 + AI 독서 도구를 무료로 체험해보세요!<br>
+                                <span class="opacity-75 text-xs">KRS 도서관 / 질문렌즈 / 영상 리텔링 / 독서토론</span>
+                            </p>
+                            <div class="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-extrabold shadow-md transition-colors" style="background: #FBBF24; color: #4C1D95;">
+                                <i class="fa-solid fa-arrow-right"></i> 지금 바로 시작하기
+                            </div>
+                        </div>
+                        <div class="text-6xl md:text-7xl flex-shrink-0 drop-shadow-lg">
+                            🎁
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Immediate state application script (runs before DOMContentLoaded) -->
+            <script>
+                (function() {
+                    // Check proto nav state and apply immediately to prevent flicker
+                    const protoState = sessionStorage.getItem('protoNavStateOnLoad');
+                    const trialApplied = sessionStorage.getItem('trialApplied') === 'true';
+                    const trialEnded = sessionStorage.getItem('trialEnded') === 'true';
+                    const banner = document.getElementById('trial-banner-section');
+
+                    if (banner) {
+                        // Apply state immediately based on session flags
+                        if (trialEnded || trialApplied) {
+                            banner.classList.add('hide');
+                        } else if (protoState === 'bookclub-before-trial') {
+                            banner.classList.remove('hide');
+                            // Clear the flag after applying
+                            sessionStorage.removeItem('protoNavStateOnLoad');
+                        }
+                    }
+                })();
+            </script>
+
+            <!-- ===== KRS 프리미엄 전환 배너 (무체 종료 후) - 넷플릭스 스타일 ===== -->
+            <section class="mb-8" id="trial-end-banner-section" style="display: none;">
+                <div class="netflix-krs-banner p-6 md:p-7 text-white">
+                    <div class="relative z-10">
+                        <div class="flex items-start justify-between gap-6 mb-6">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="netflix-badge">🎓 PREMIUM</div>
+                                    <div class="netflix-badge-hot">🔥 HOT</div>
+                                </div>
+                                <h2 class="netflix-title mb-4">
+                                    이제 <span class="netflix-highlight">KRS</span>로<br>
+                                    진짜 실력을 키울 시간!
+                                </h2>
+                                <p class="netflix-subtitle mb-6">
+                                    AI가 분석한 맞춤 커리큘럼으로<br class="md:hidden">
+                                    우희만의 독서 여정을 시작하세요
+                                </p>
+                            </div>
+                            <div class="netflix-visual hidden md:block">
+                                <div class="netflix-circle-1"></div>
+                                <div class="netflix-circle-2"></div>
+                                <div class="netflix-emoji">📚</div>
+                            </div>
+                        </div>
+
+                        <div class="netflix-features mb-8">
+                            <div class="netflix-feature-item">
+                                <div class="netflix-feature-icon">🎯</div>
+                                <div>
+                                    <div class="netflix-feature-title">맞춤 학습</div>
+                                    <div class="netflix-feature-desc">AI 분석 기반</div>
+                                </div>
+                            </div>
+                            <div class="netflix-feature-item">
+                                <div class="netflix-feature-icon">📊</div>
+                                <div>
+                                    <div class="netflix-feature-title">성장 리포트</div>
+                                    <div class="netflix-feature-desc">실시간 분석</div>
+                                </div>
+                            </div>
+                            <div class="netflix-feature-item">
+                                <div class="netflix-feature-icon">🎬</div>
+                                <div>
+                                    <div class="netflix-feature-title">독서 도구</div>
+                                    <div class="netflix-feature-desc">AI 도우미</div>
+                                </div>
+                            </div>
+                            <div class="netflix-feature-item">
+                                <div class="netflix-feature-icon">⭐</div>
+                                <div>
+                                    <div class="netflix-feature-title">레벨 시스템</div>
+                                    <div class="netflix-feature-desc">성장 추적</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <button onclick="showKRSPasswordModal()" class="netflix-btn-primary">
+                                <i class="fa-solid fa-rocket"></i>
+                                <span>KRS 신청하기</span>
+                            </button>
+                            <button onclick="closeTrialEndBanner()" class="netflix-btn-secondary">
+                                나중에
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- KRS 신청 완료 안내 -->
+            <div id="krs-application-success-notice" style="display: none;" class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl shadow-sm animate-slideDown">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-xl flex-shrink-0">
+                        ✓
+                    </div>
+                    <div>
+                        <p class="font-noto text-base font-bold text-green-800">KRS 신청 완료!</p>
+                        <p class="text-sm text-green-700">담당 교사분이 연락을 줄 거예요!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 1. 이번 주 추천 책 ===== -->
+            <section class="mb-8">
+                <div class="section-header">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">📖</span>
+                        <h3 class="font-noto text-xl text-gray-800">이번 주 추천 책</h3>
+                    </div>
+                    <span class="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-star text-amber-500"></i> 이번 주 책을 읽으면 별 ★+10
+                    </span>
+                </div>
+                <!-- Weekly progress -->
+                <div class="mb-5">
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+                        <span>이번 주 독서 진행률</span>
+                        <span class="font-bold text-brand-primary">2/5권</span>
+                    </div>
+                    <div class="weekly-progress">
+                        <div class="weekly-progress-fill" style="width: 40%"></div>
+                    </div>
+                </div>
+                <div class="scroll-section" id="recommended-books">
+                    <!-- JS에서 렌더링 -->
+                </div>
+            </section>
+
+            <!-- ===== 2. 새로 나온 영상 ===== -->
+            <section class="mb-8">
+                <div class="section-header">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🎬</span>
+                        <h3 class="font-noto text-xl text-gray-800">새로 나온 영상</h3>
+                    </div>
+                    <button class="text-sm text-brand-primary font-bold hover:underline">더보기 →</button>
+                </div>
+                <div class="scroll-section" id="new-videos">
+                    <!-- JS에서 렌더링 -->
+                </div>
+            </section>
+
+            <!-- ===== 3. 새로 나온 책 ===== -->
+            <section class="mb-8">
+                <div class="section-header">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">📚</span>
+                        <h3 class="font-noto text-xl text-gray-800">새로 나온 책</h3>
+                    </div>
+                    <button class="text-sm text-brand-primary font-bold hover:underline">더보기 →</button>
+                </div>
+                <div class="scroll-section" id="new-books">
+                    <!-- JS에서 렌더링 -->
+                </div>
+            </section>
+
+            <!-- ===== 4. 독후 활동이 활발한 도서 ===== -->
+            <section class="mb-8">
+                <div class="section-header">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🔥</span>
+                        <h3 class="font-noto text-xl text-gray-800">독후 활동이 활발한 도서</h3>
+                    </div>
+                    <button class="text-sm text-brand-primary font-bold hover:underline">더보기 →</button>
+                </div>
+                <div class="scroll-section" id="active-books">
+                    <!-- JS에서 렌더링 -->
+                </div>
+            </section>
+
+            <!-- ===== 5. 친구들이 이 영상을 보고 있어 ===== -->
+            <section class="mb-8">
+                <div class="section-header">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">👀</span>
+                        <h3 class="font-noto text-xl text-gray-800">친구들이 이 영상을 보고 있어</h3>
+                    </div>
+                    <button class="text-sm text-brand-primary font-bold hover:underline">더보기 →</button>
+                </div>
+                <div class="scroll-section" id="friends-videos">
+                    <!-- JS에서 렌더링 -->
+                </div>
+            </section>
+
+          </div>
+        </main>
+    </div>
+
+    <!-- Logout Modal Container -->
+    <div id="logout-modal-container"></div>
+
+    <!-- KRS 신청 팝업 3단계 -->
+    <!-- 1단계: 비밀번호 입력 -->
+    <div id="krs-password-modal" class="krs-modal-overlay" style="display: none;">
+        <div class="krs-modal-content">
+            <div class="krs-modal-header">
+                <h3 class="text-lg font-bold text-gray-800">🔒 비밀번호 입력</h3>
+            </div>
+            <div class="krs-modal-body">
+                <p class="text-base text-gray-600 mb-4">KRS 신청을 위해 비밀번호를 입력해주세요</p>
+                <input type="password" id="krs-password-input" maxlength="4" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-primary" placeholder="비밀번호를 입력하세요">
+                <p id="krs-password-error" class="text-sm text-red-500 mt-2 hidden">비밀번호가 올바르지 않습니다</p>
+            </div>
+            <div class="krs-modal-footer">
+                <button onclick="closeKRSPasswordModal()" class="px-6 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors">취소</button>
+                <button onclick="verifyKRSPassword()" class="px-6 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-dark transition-colors font-bold">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2단계: 담당 교사 신청 확인 -->
+    <div id="krs-confirm-modal" class="krs-modal-overlay" style="display: none;">
+        <div class="krs-modal-content">
+            <div class="krs-modal-header">
+                <h3 class="text-lg font-bold text-gray-800">👩‍🏫 KRS 신청 확인</h3>
+            </div>
+            <div class="krs-modal-body">
+                <p class="text-base text-gray-700 leading-relaxed">
+                    담당 교사에게 KRS 프로그램을<br>
+                    신청하시겠습니까?
+                </p>
+            </div>
+            <div class="krs-modal-footer">
+                <button onclick="closeKRSConfirmModal()" class="px-6 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors">아니오</button>
+                <button onclick="confirmKRSApplication()" class="px-6 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-dark transition-colors font-bold">예</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3단계: 신청 완료 -->
+    <div id="krs-complete-modal" class="krs-modal-overlay" style="display: none;">
+        <div class="krs-modal-content">
+            <div class="krs-modal-header">
+                <h3 class="text-lg font-bold text-brand-primary">✅ 신청 완료</h3>
+            </div>
+            <div class="krs-modal-body">
+                <p class="text-base text-gray-700 leading-relaxed text-center">
+                    신청이 완료되었습니다!<br>
+                    <span class="text-sm text-gray-500 mt-2 block">담당 교사가 곧 연락드릴 예정입니다</span>
+                </p>
+            </div>
+            <div class="krs-modal-footer justify-center">
+                <button onclick="closeKRSCompleteModal()" class="px-8 py-2.5 bg-brand-primary text-white rounded-xl hover:bg-brand-dark transition-colors font-bold">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .krs-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .krs-modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideUp 0.3s ease-out;
+        }
+        .krs-modal-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .krs-modal-body {
+            padding: 24px;
+        }
+        .krs-modal-footer {
+            padding: 16px 24px 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        // ===== 샘플 데이터 =====
+        const bookData = {
+            recommended: [
+                { title: '숲속 친구들', genre: '자연/동물', emoji: '🌳', bg: 'from-emerald-400 to-teal-500' },
+                { title: '바다의 비밀', genre: '과학/탐험', emoji: '🐳', bg: 'from-sky-400 to-blue-500' },
+                { title: '우주 탐험대', genre: '과학/우주', emoji: '🚀', bg: 'from-indigo-400 to-purple-500' },
+                { title: '요리사 곰돌이', genre: '생활/요리', emoji: '🐻', bg: 'from-amber-400 to-orange-500' },
+                { title: '무지개 마을', genre: '판타지', emoji: '🌈', bg: 'from-pink-400 to-rose-500' }
+            ],
+            newBooks: [
+                { title: '마법의 도서관', genre: '판타지', emoji: '🏰', bg: 'from-violet-400 to-purple-600' },
+                { title: '공룡 친구들', genre: '과학/공룡', emoji: '🦕', bg: 'from-lime-400 to-green-500' },
+                { title: '별나라 여행', genre: '판타지', emoji: '⭐', bg: 'from-yellow-400 to-amber-500' },
+                { title: '아기 펭귄 모험', genre: '자연/동물', emoji: '🐧', bg: 'from-cyan-400 to-blue-500' },
+                { title: '꽃밭 요정', genre: '동화', emoji: '🌸', bg: 'from-pink-300 to-rose-400' },
+                { title: '시간 여행자', genre: '모험', emoji: '⏰', bg: 'from-teal-400 to-emerald-500' }
+            ],
+            activeBooks: [
+                { title: '오즈의 마법사', genre: '모험', emoji: '🧙', bg: 'from-purple-400 to-indigo-500', activity: '퀴즈 342명' },
+                { title: '피노키오', genre: '동화', emoji: '🤥', bg: 'from-amber-400 to-yellow-500', activity: '토론 287명' },
+                { title: '아기 돼지 삼형제', genre: '동화', emoji: '🐷', bg: 'from-pink-400 to-red-400', activity: '퀴즈 256명' },
+                { title: '잭과 콩나무', genre: '판타지', emoji: '🌱', bg: 'from-green-400 to-emerald-500', activity: '리텔링 231명' },
+                { title: '백설공주', genre: '동화', emoji: '🍎', bg: 'from-red-400 to-rose-500', activity: '퀴즈 215명' },
+                { title: '인어공주', genre: '동화', emoji: '🧜', bg: 'from-sky-400 to-cyan-500', activity: '토론 198명' },
+                { title: '라푼젤', genre: '판타지', emoji: '💇', bg: 'from-violet-400 to-fuchsia-500', activity: '리텔링 176명' },
+                { title: '피터팬', genre: '모험', emoji: '🧚', bg: 'from-teal-400 to-green-500', activity: '퀴즈 164명' }
+            ]
+        };
+
+        const videoData = {
+            newVideos: [
+                { title: '공룡은 왜 사라졌을까?', duration: '4:32', emoji: '🦖', bg: 'from-green-400 to-emerald-500' },
+                { title: '바다 깊은 곳에는 뭐가 있을까?', duration: '3:47', emoji: '🌊', bg: 'from-blue-400 to-cyan-500' },
+                { title: '우리 몸의 비밀', duration: '5:12', emoji: '🫀', bg: 'from-rose-400 to-pink-500' },
+                { title: '달나라 탐험!', duration: '3:20', emoji: '🌙', bg: 'from-indigo-400 to-violet-500' },
+                { title: '곤충의 세계', duration: '4:05', emoji: '🦋', bg: 'from-lime-400 to-green-500' },
+                { title: '세계 여러 나라 음식', duration: '3:55', emoji: '🍜', bg: 'from-orange-400 to-amber-500' },
+                { title: '로봇 친구 만들기', duration: '6:10', emoji: '🤖', bg: 'from-sky-400 to-blue-500' }
+            ],
+            friendsVideos: [
+                { title: '동화 속 주인공이 된다면?', duration: '3:15', emoji: '👑', bg: 'from-amber-400 to-yellow-500', viewers: '23명 시청 중' },
+                { title: '재미있는 한글 놀이', duration: '4:40', emoji: '🗣️', bg: 'from-emerald-400 to-teal-500', viewers: '18명 시청 중' },
+                { title: '숫자야 놀자!', duration: '3:30', emoji: '🔢', bg: 'from-blue-400 to-indigo-500', viewers: '15명 시청 중' },
+                { title: '동물 흉내 내기', duration: '2:50', emoji: '🐒', bg: 'from-orange-400 to-red-400', viewers: '12명 시청 중' },
+                { title: '색깔 나라 여행', duration: '4:15', emoji: '🎨', bg: 'from-pink-400 to-purple-500', viewers: '9명 시청 중' }
+            ]
+        };
+
+        // ===== 렌더링 함수 =====
+        function renderBookCards(containerId, books) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = books.map(book => `
+                <div class="home2-book-card" onclick="alert('${book.title} 도서를 엽니다!')">
+                    <div class="home2-book-cover bg-gradient-to-br ${book.bg}">
+                        <span class="book-emoji">${book.emoji}</span>
+                    </div>
+                    <p class="font-bold text-sm text-gray-800 mt-2.5 truncate">${book.title}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">${book.genre}</p>
+                    ${book.activity ? `<p class="text-[10px] text-brand-primary font-bold mt-1"><i class="fa-solid fa-fire text-orange-400"></i> ${book.activity}</p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderVideoCards(containerId, videos) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = videos.map(video => `
+                <div class="home2-video-card" onclick="alert('${video.title} 영상을 재생합니다!')">
+                    <div class="home2-video-thumb bg-gradient-to-br ${video.bg}">
+                        <span class="video-emoji">${video.emoji}</span>
+                        <div class="play-overlay">
+                            <div class="w-11 h-11 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fa-solid fa-play text-brand-primary text-sm ml-0.5"></i>
+                            </div>
+                        </div>
+                        <span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded">${video.duration}</span>
+                    </div>
+                    <p class="font-bold text-sm text-gray-800 mt-2.5 truncate">${video.title}</p>
+                    ${video.viewers ? `<p class="text-xs text-brand-primary font-medium mt-0.5"><i class="fa-solid fa-eye text-gray-400 mr-1"></i>${video.viewers}</p>` : `<p class="text-xs text-gray-400 mt-0.5">${video.duration}</p>`}
+                </div>
+            `).join('');
+        }
+
+        // ===== KRS 무료체험 모달 =====
+        function showTrialModal() {
+            const modal = document.createElement('div');
+            modal.id = 'trial-modal';
+            modal.className = 'home2-modal-overlay';
+            modal.innerHTML = `
+                <div class="home2-modal">
+                    <div class="text-6xl mb-4">🎁</div>
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">무료체험 신청</h3>
+                    <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+                        KRS 1주일 무료체험을<br>신청하시겠습니까?
+                    </p>
+                    <div class="flex gap-3">
+                        <button onclick="closeTrialModal()" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors">취소</button>
+                        <button onclick="confirmTrial()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-brand-primary to-brand-dark text-white font-bold hover:shadow-lg transition-all">확인</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function closeTrialModal() {
+            const modal = document.getElementById('trial-modal');
+            if (modal) modal.remove();
+        }
+
+        function confirmTrial() {
+            const modal = document.getElementById('trial-modal');
+            if (modal) {
+                modal.querySelector('.home2-modal').innerHTML = `
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">신청 완료!</h3>
+                    <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+                        신청이 완료되었습니다!<br>
+                        <span class="text-brand-primary font-bold">KRS 진단평가 화면</span>으로 이동합니다.
+                    </p>
+                    <button onclick="goToKrsHome()" class="w-full py-3 rounded-xl bg-gradient-to-r from-brand-primary to-brand-dark text-white font-bold hover:shadow-lg transition-all">확인</button>
+                `;
+            }
+        }
+
+        function goToKrsHome() {
+            sessionStorage.setItem('selectedApp', 'bookclub-krs');
+            // 무료체험 신청 완료 후 진단테스트 실행
+            window.location.href = 'diagnosis.html';
+        }
+
+        // ===== KRS 프로그램 신청 모달 (교사에게 신청) =====
+        function showKrsApplicationModal() {
+            const modal = document.createElement('div');
+            modal.id = 'krs-application-modal';
+            modal.className = 'home2-modal-overlay';
+            modal.innerHTML = `
+                <div class="home2-modal">
+                    <div class="text-6xl mb-4">📬</div>
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">KRS 프로그램 신청</h3>
+                    <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+                        담당 교사분께<br>신청서를 보내시겠습니까?
+                    </p>
+                    <div class="flex gap-3">
+                        <button onclick="closeKrsApplicationModal()" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors">취소</button>
+                        <button onclick="showPasswordInput()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:shadow-lg transition-all">확인</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showPasswordInput() {
+            const modal = document.getElementById('krs-application-modal');
+            if (modal) {
+                modal.querySelector('.home2-modal').innerHTML = `
+                    <div class="text-6xl mb-4">🔐</div>
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">패드 비밀번호 입력</h3>
+                    <p class="text-sm text-gray-500 mb-4">
+                        보안을 위해 비밀번호를 입력해주세요
+                    </p>
+                    <input type="password" id="pad-password" placeholder="비밀번호 입력"
+                        class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none mb-6 text-center text-lg font-bold"
+                        maxlength="6">
+                    <div class="flex gap-3">
+                        <button onclick="closeKrsApplicationModal()" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors">취소</button>
+                        <button onclick="confirmKrsApplication()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:shadow-lg transition-all">확인</button>
+                    </div>
+                `;
+                // 포커스 설정
+                setTimeout(() => {
+                    document.getElementById('pad-password').focus();
+                }, 100);
+            }
+        }
+
+        function confirmKrsApplication() {
+            const passwordInput = document.getElementById('pad-password');
+            const password = passwordInput?.value;
+
+            if (!password || password.length < 4) {
+                passwordInput?.classList.add('border-red-500');
+                setTimeout(() => passwordInput?.classList.remove('border-red-500'), 500);
+                return;
+            }
+
+            const modal = document.getElementById('krs-application-modal');
+            if (modal) {
+                modal.querySelector('.home2-modal').innerHTML = `
+                    <div class="text-6xl mb-4">✅</div>
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">신청 완료!</h3>
+                    <p class="text-sm text-gray-500 mb-6 leading-relaxed">
+                        담당 교사분께<br>
+                        <span class="text-indigo-600 font-bold">신청이 완료되었습니다.</span><br><br>
+                        <span class="text-xs text-gray-400">곧 연락드리겠습니다 😊</span>
+                    </p>
+                    <button onclick="closeKrsApplicationModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:shadow-lg transition-all">확인</button>
+                `;
+            }
+        }
+
+        function closeKrsApplicationModal() {
+            const modal = document.getElementById('krs-application-modal');
+            if (modal) modal.remove();
+        }
+
+        // ===== 무체 종료 배너 관련 함수 =====
+        function goToKRSFromTrialEnd() {
+            // KRS로 전환
+            sessionStorage.setItem('selectedApp', 'bookclub-krs');
+            sessionStorage.removeItem('hideLibraryMenu');
+            window.location.href = 'home.html';
+        }
+
+        function closeTrialEndBanner() {
+            const banner = document.getElementById('trial-end-banner-section');
+            if (banner) {
+                banner.style.display = 'none';
+                // 일반 무료체험 배너도 표시하지 않음
+            }
+        }
+
+        // ===== KRS 신청 3단계 팝업 함수들 =====
+
+        // 1단계: 비밀번호 입력 팝업 열기
+        function showKRSPasswordModal() {
+            const modal = document.getElementById('krs-password-modal');
+            const input = document.getElementById('krs-password-input');
+            const error = document.getElementById('krs-password-error');
+
+            if (modal) {
+                modal.style.display = 'flex';
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                if (error) error.classList.add('hidden');
+
+                // Enter 키로 확인
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        verifyKRSPassword();
+                    }
+                });
+            }
+        }
+
+        function closeKRSPasswordModal() {
+            const modal = document.getElementById('krs-password-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // 비밀번호 검증 후 2단계로
+        function verifyKRSPassword() {
+            const input = document.getElementById('krs-password-input');
+            const error = document.getElementById('krs-password-error');
+
+            // 4자리 아무 글자나 입력하면 통과
+            if (input.value.length === 4) {
+                closeKRSPasswordModal();
+                showKRSConfirmModal();
+            } else {
+                if (error) error.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // 2단계: 담당 교사 신청 확인 팝업 열기
+        function showKRSConfirmModal() {
+            const modal = document.getElementById('krs-confirm-modal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeKRSConfirmModal() {
+            const modal = document.getElementById('krs-confirm-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // 3단계: 신청 완료 팝업으로
+        function confirmKRSApplication() {
+            closeKRSConfirmModal();
+            showKRSCompleteModal();
+        }
+
+        // 3단계: 신청 완료 팝업 열기
+        function showKRSCompleteModal() {
+            const modal = document.getElementById('krs-complete-modal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeKRSCompleteModal() {
+            const modal = document.getElementById('krs-complete-modal');
+            if (modal) modal.style.display = 'none';
+
+            // 무료체험 종료 배너 닫기
+            closeTrialEndBanner();
+
+            // KRS 신청 완료 안내 문구 표시
+            const notice = document.getElementById('krs-application-success-notice');
+            if (notice) {
+                notice.style.display = 'block';
+                // 5초 후 자동으로 숨김
+                setTimeout(() => {
+                    notice.style.opacity = '0';
+                    notice.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(() => {
+                        notice.style.display = 'none';
+                        notice.style.opacity = '1';
+                    }, 500);
+                }, 5000);
+            }
+        }
+
+        // ===== Init =====
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSidebar('home');
+            loadLogoutModal();
+
+            // 앱 상태를 bookclub으로 보장
+            const currentApp = sessionStorage.getItem('selectedApp');
+            if (currentApp !== 'bookclub') {
+                sessionStorage.setItem('selectedApp', 'bookclub');
+            }
+
+            // KRS 배너 조건부 표시 (무체 상태에 따라 다른 배너 표시)
+            const trialApplied = sessionStorage.getItem('trialApplied') === 'true';
+            const trialEnded = sessionStorage.getItem('trialEnded') === 'true';
+            const trialBanner = document.getElementById('trial-banner-section');
+            const endBanner = document.getElementById('trial-end-banner-section');
+
+            if (trialEnded) {
+                // 무체 종료: 넷플릭스 스타일 KRS 전환 배너 표시
+                if (trialBanner) trialBanner.classList.add('hide');
+                if (endBanner) endBanner.classList.add('show');
+            } else if (trialApplied) {
+                // 무체 신청 완료: 배너 숨김 (홍보 배너 삭제됨)
+                if (trialBanner) trialBanner.classList.add('hide');
+                if (endBanner) endBanner.classList.remove('show');
+            } else {
+                // 무체 신청 전: 무료체험 배너 표시 (기본 표시 상태 유지)
+                if (trialBanner) trialBanner.classList.remove('hide');
+                if (endBanner) endBanner.classList.remove('show');
+            }
+
+            // 콘텐츠 렌더링
+            renderBookCards('recommended-books', bookData.recommended);
+            renderVideoCards('new-videos', videoData.newVideos);
+            renderBookCards('new-books', bookData.newBooks);
+            renderBookCards('active-books', bookData.activeBooks);
+            renderVideoCards('friends-videos', videoData.friendsVideos);
+        });
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

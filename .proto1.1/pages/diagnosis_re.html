@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 재진단 테스트</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1',
+                            duo: { green: '#58CC02', blue: '#1CB0F6', purple: '#CE82FF', orange: '#FF9600', red: '#FF4B4B' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        .diagnosis-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .diagnosis-card:hover {
+            transform: translateY(-8px) scale(1.02);
+        }
+        .diagnosis-card:active {
+            transform: scale(0.98);
+        }
+
+        .bounce-slow {
+            animation: bounce-slow 2s ease-in-out infinite;
+        }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .pulse-ring {
+            animation: pulse-ring 2s ease-out infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 font-sans text-gray-800 min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-orange-100 shadow-sm">
+        <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <button onclick="goBack()" class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-compass text-brand-primary text-xl"></i>
+                <h1 class="font-noto text-xl text-gray-800">나의 독서 재진단</h1>
+            </div>
+            <div class="w-10"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6 py-8">
+        <!-- Level Badge -->
+        <div class="flex justify-center mb-8">
+            <div class="relative">
+                <!-- Pulse Ring -->
+                <div class="absolute inset-0 bg-brand-primary/30 rounded-full pulse-ring"></div>
+                <!-- Level Circle -->
+                <div class="relative w-28 h-28 bg-gradient-to-br from-brand-primary to-orange-500 rounded-full flex flex-col items-center justify-center shadow-xl border-4 border-white">
+                    <span class="text-white/80 text-xs font-bold">현재 레벨</span>
+                    <span class="font-noto text-3xl text-white">K2-1</span>
+                </div>
+                <!-- Character -->
+                <div class="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl shadow-lg border-2 border-orange-200 bounce-slow">
+                    🐿️
+                </div>
+            </div>
+        </div>
+
+        <!-- Greeting -->
+        <div class="text-center mb-10">
+            <h2 class="font-noto text-2xl text-gray-800 mb-2">
+                <span data-user-name>우희</span>님의 독서 능력을 알아볼까요?
+            </h2>
+            <p class="text-gray-500">원하는 진단을 선택해서 시작해보세요!</p>
+        </div>
+
+        <!-- Diagnosis Cards -->
+        <div class="grid gap-6 md:grid-cols-3">
+            <!-- Card 1: 독서 능력 -->
+            <div onclick="startDiagnosis('ability')" class="diagnosis-card cursor-pointer bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-brand-duo-green hover:shadow-2xl relative overflow-hidden group">
+                <!-- Background Decoration -->
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-green-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+
+                <div class="relative">
+                    <!-- Icon -->
+                    <div class="w-16 h-16 bg-gradient-to-br from-brand-duo-green to-green-400 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                        📚
+                    </div>
+
+                    <!-- Title -->
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">독서 능력</h3>
+                    <p class="text-sm text-gray-500 mb-4">어휘 · 이해 · 추론</p>
+
+                    <!-- Info -->
+                    <div class="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-list-check"></i> 10문항
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-clock"></i> 약 10분
+                        </span>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="w-0 h-full bg-brand-duo-green rounded-full"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">0%</span>
+                        </div>
+                        <div class="w-8 h-8 bg-brand-duo-green/10 rounded-full flex items-center justify-center text-brand-duo-green group-hover:bg-brand-duo-green group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: 독서 취향 -->
+            <div onclick="startDiagnosis('taste')" class="diagnosis-card cursor-pointer bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-brand-duo-blue hover:shadow-2xl relative overflow-hidden group">
+                <!-- Background Decoration -->
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+
+                <div class="relative">
+                    <!-- Icon -->
+                    <div class="w-16 h-16 bg-gradient-to-br from-brand-duo-blue to-blue-400 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                        💖
+                    </div>
+
+                    <!-- Title -->
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">독서 취향</h3>
+                    <p class="text-sm text-gray-500 mb-4">장르 · 주제 · 선호</p>
+
+                    <!-- Info -->
+                    <div class="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-list-check"></i> 5문항
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-clock"></i> 약 3분
+                        </span>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="w-0 h-full bg-brand-duo-blue rounded-full"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">0%</span>
+                        </div>
+                        <div class="w-8 h-8 bg-brand-duo-blue/10 rounded-full flex items-center justify-center text-brand-duo-blue group-hover:bg-brand-duo-blue group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: 개인 기질 -->
+            <div onclick="startDiagnosis('temperament')" class="diagnosis-card cursor-pointer bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-brand-duo-purple hover:shadow-2xl relative overflow-hidden group">
+                <!-- Background Decoration -->
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-purple-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+
+                <div class="relative">
+                    <!-- Icon -->
+                    <div class="w-16 h-16 bg-gradient-to-br from-brand-duo-purple to-purple-400 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                        🌈
+                    </div>
+
+                    <!-- Title -->
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">개인 기질</h3>
+                    <p class="text-sm text-gray-500 mb-4">성향 · 집중 · 정서</p>
+
+                    <!-- Info -->
+                    <div class="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-list-check"></i> 5문항
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-clock"></i> 약 3분
+                        </span>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="w-0 h-full bg-brand-duo-purple rounded-full"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">0%</span>
+                        </div>
+                        <div class="w-8 h-8 bg-brand-duo-purple/10 rounded-full flex items-center justify-center text-brand-duo-purple group-hover:bg-brand-duo-purple group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="mt-12 bg-white/60 backdrop-blur rounded-2xl p-6 border border-orange-100">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-brand-primary/10 rounded-xl flex items-center justify-center text-brand-primary flex-shrink-0">
+                    <i class="fa-solid fa-lightbulb text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-noto text-lg text-gray-800 mb-1">진단 결과로 무엇을 알 수 있나요?</h4>
+                    <p class="text-sm text-gray-500 leading-relaxed">
+                        <strong class="text-brand-duo-green">독서 능력</strong>으로 나에게 맞는 레벨을,
+                        <strong class="text-brand-duo-blue">독서 취향</strong>으로 좋아하는 책을,
+                        <strong class="text-brand-duo-purple">개인 기질</strong>로 읽기 편한 책을 추천받아요!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script>
+        function startDiagnosis(type) {
+            switch(type) {
+                case 'ability':
+                    window.location.href = 'diagnosis-ability.html';
+                    break;
+                case 'taste':
+                    window.location.href = 'diagnosis-taste.html';
+                    break;
+                case 'temperament':
+                    window.location.href = 'diagnosis-temperament.html';
+                    break;
+            }
+        }
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

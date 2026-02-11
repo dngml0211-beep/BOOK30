@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 진단 테스트</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1',
+                            duo: { green: '#58CC02', blue: '#1CB0F6', purple: '#CE82FF', orange: '#FF9600', red: '#FF4B4B' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        .diagnosis-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .diagnosis-card:hover {
+            transform: translateY(-8px) scale(1.02);
+        }
+        .diagnosis-card:active {
+            transform: scale(0.98);
+        }
+
+        .bounce-slow {
+            animation: bounce-slow 2s ease-in-out infinite;
+        }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .pulse-ring {
+            animation: pulse-ring 2s ease-out infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 font-sans text-gray-800 min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-orange-100 shadow-sm">
+        <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <button onclick="goBack()" class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 transition-colors">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-compass text-brand-primary text-xl"></i>
+                <h1 class="font-noto text-xl text-gray-800">나의 독서 진단</h1>
+            </div>
+            <div class="w-10"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6 py-8">
+        <!-- Level Question -->
+        <div class="flex justify-center mb-8">
+            <div class="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-3xl px-8 py-6 border-2 border-brand-primary/20 shadow-lg">
+                <h2 class="font-noto text-2xl text-gray-800 text-center">
+                    <span class="text-brand-primary font-bold">나의 독서 레벨</span>은?
+                </h2>
+            </div>
+        </div>
+
+        <!-- Greeting -->
+        <div class="text-center mb-10">
+            <h2 class="font-noto text-2xl text-gray-800 mb-2">
+                <span data-user-name>우희</span>님의 독서 능력을 알아볼까요?
+            </h2>
+            <p class="text-gray-500">원하는 진단을 선택해서 시작해보세요!</p>
+        </div>
+
+        <!-- Diagnosis Cards -->
+        <div class="grid gap-6 md:grid-cols-3">
+            <!-- Card 1: 독서 능력 -->
+            <div onclick="startDiagnosis('ability')" class="diagnosis-card cursor-pointer bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-brand-duo-green hover:shadow-2xl relative overflow-hidden group">
+                <!-- Background Decoration -->
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-green-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+
+                <div class="relative">
+                    <!-- Icon -->
+                    <div class="w-16 h-16 bg-gradient-to-br from-brand-duo-green to-green-400 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                        📚
+                    </div>
+
+                    <!-- Title -->
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">독서 능력</h3>
+                    <p class="text-sm text-gray-500 mb-4">어휘 · 이해 · 추론</p>
+
+                    <!-- Info -->
+                    <div class="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-list-check"></i> 10문항
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-clock"></i> 약 10분
+                        </span>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="w-0 h-full bg-brand-duo-green rounded-full"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">0%</span>
+                        </div>
+                        <div class="w-8 h-8 bg-brand-duo-green/10 rounded-full flex items-center justify-center text-brand-duo-green group-hover:bg-brand-duo-green group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: 독서 취향 -->
+            <div onclick="startDiagnosis('taste')" class="diagnosis-card cursor-pointer bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-brand-duo-blue hover:shadow-2xl relative overflow-hidden group">
+                <!-- Background Decoration -->
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+
+                <div class="relative">
+                    <!-- Icon -->
+                    <div class="w-16 h-16 bg-gradient-to-br from-brand-duo-blue to-blue-400 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                        💖
+                    </div>
+
+                    <!-- Title -->
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">독서 취향</h3>
+                    <p class="text-sm text-gray-500 mb-4">장르 · 주제 · 선호</p>
+
+                    <!-- Info -->
+                    <div class="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-list-check"></i> 5문항
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-clock"></i> 약 3분
+                        </span>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="w-0 h-full bg-brand-duo-blue rounded-full"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">0%</span>
+                        </div>
+                        <div class="w-8 h-8 bg-brand-duo-blue/10 rounded-full flex items-center justify-center text-brand-duo-blue group-hover:bg-brand-duo-blue group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: 개인 기질 -->
+            <div onclick="startDiagnosis('temperament')" class="diagnosis-card cursor-pointer bg-white rounded-3xl p-6 shadow-lg border-2 border-transparent hover:border-brand-duo-purple hover:shadow-2xl relative overflow-hidden group">
+                <!-- Background Decoration -->
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-purple-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+
+                <div class="relative">
+                    <!-- Icon -->
+                    <div class="w-16 h-16 bg-gradient-to-br from-brand-duo-purple to-purple-400 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                        🌈
+                    </div>
+
+                    <!-- Title -->
+                    <h3 class="font-noto text-xl text-gray-800 mb-2">개인 기질</h3>
+                    <p class="text-sm text-gray-500 mb-4">성향 · 집중 · 정서</p>
+
+                    <!-- Info -->
+                    <div class="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-list-check"></i> 5문항
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-clock"></i> 약 3분
+                        </span>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="w-0 h-full bg-brand-duo-purple rounded-full"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">0%</span>
+                        </div>
+                        <div class="w-8 h-8 bg-brand-duo-purple/10 rounded-full flex items-center justify-center text-brand-duo-purple group-hover:bg-brand-duo-purple group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="mt-12 bg-white/60 backdrop-blur rounded-2xl p-6 border border-orange-100">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-brand-primary/10 rounded-xl flex items-center justify-center text-brand-primary flex-shrink-0">
+                    <i class="fa-solid fa-lightbulb text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-noto text-lg text-gray-800 mb-1">진단 결과로 무엇을 알 수 있나요?</h4>
+                    <p class="text-sm text-gray-500 leading-relaxed">
+                        <strong class="text-brand-duo-green">독서 능력</strong>으로 나에게 맞는 레벨을,
+                        <strong class="text-brand-duo-blue">독서 취향</strong>으로 좋아하는 책을,
+                        <strong class="text-brand-duo-purple">개인 기질</strong>로 읽기 편한 책을 추천받아요!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 또또 캐릭터 팝업 (우측 하단, 큰 캐릭터) -->
+    <div id="ttotto-popup" class="hidden" onclick="hideTtottoPopup()" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.25);display:none;align-items:flex-end;justify-content:flex-end;padding:24px;">
+        <div class="ttotto-container" onclick="event.stopPropagation()" style="position:relative;display:flex;flex-direction:column;align-items:center;animation:ttottoPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <!-- 말풍선 (캐릭터 위에 표시) -->
+            <div class="ttotto-speech" style="position:relative;background:white;border-radius:24px;padding:18px 24px;box-shadow:0 8px 32px rgba(0,0,0,0.15);max-width:280px;margin-bottom:16px;animation:speechFadeIn 0.4s ease 0.2s both;">
+                <!-- 말풍선 꼬리 (아래 방향) -->
+                <div style="position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:14px solid white;"></div>
+                <p id="ttotto-message" style="font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:600;color:#374151;line-height:1.6;margin:0;text-align:center;">여기는 KRS 진단평가 화면이야!<br>나랑 같이 진단 평가 해보자!</p>
+            </div>
+            <!-- 또또 캐릭터 (화면 35% 크기) -->
+            <div class="ttotto-character" style="width:35vh;height:35vh;min-width:200px;min-height:200px;max-width:380px;max-height:380px;filter:drop-shadow(0 12px 36px rgba(0,0,0,0.25));animation:ttottoBounce 2s ease-in-out infinite;">
+                <img src="../img/EHEH.png" alt="또또" style="width:100%;height:100%;object-fit:contain;" onerror="this.innerHTML='🐿️'">
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes ttottoPopIn {
+            0% { opacity:0; transform:translateY(100px) scale(0.3); }
+            60% { transform:translateY(-20px) scale(1.05); }
+            100% { opacity:1; transform:translateY(0) scale(1); }
+        }
+        @keyframes ttottoBounce {
+            0%, 100% { transform:translateY(0); }
+            50% { transform:translateY(-12px); }
+        }
+        @keyframes speechFadeIn {
+            0% { opacity:0; transform:translateY(10px); }
+            100% { opacity:1; transform:translateY(0); }
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script>
+        function startDiagnosis(type) {
+            switch(type) {
+                case 'ability':
+                    window.location.href = 'diagnosis-ability.html';
+                    break;
+                case 'taste':
+                    window.location.href = 'diagnosis-taste.html';
+                    break;
+                case 'temperament':
+                    window.location.href = 'diagnosis-temperament.html';
+                    break;
+            }
+        }
+
+        // 또또 팝업 표시 (메시지 변경 가능)
+        function showTtottoPopup(message) {
+            const popup = document.getElementById('ttotto-popup');
+            const messageEl = document.getElementById('ttotto-message');
+
+            if (message && messageEl) {
+                messageEl.innerHTML = message;
+            }
+
+            if (popup) {
+                popup.classList.remove('hidden');
+                popup.style.display = 'flex';
+            }
+        }
+
+        // 또또 팝업 숨기기
+        function hideTtottoPopup() {
+            const popup = document.getElementById('ttotto-popup');
+            if (popup) {
+                popup.classList.add('hidden');
+                popup.style.display = 'none';
+            }
+        }
+
+        // 뒤로가기 클릭 카운터
+        let backClickCount = 0;
+
+        // goBack 함수 오버라이드
+        const originalGoBack = window.goBack;
+        window.goBack = function() {
+            backClickCount++;
+
+            if (backClickCount === 1) {
+                // 첫 번째 클릭: EHEH 팝업 표시
+                showTtottoPopup('잠깐! 진단을 모두 끝내야<br>KRS를 할 수 있어!<br>그래도 나가고 싶으면<br>뒤로가기를 한번 더 눌러줘');
+            } else if (backClickCount >= 2) {
+                // 두 번째 클릭: home2.html로 이동
+                window.location.href = 'home2.html';
+            }
+        };
+
+        // 페이지 로드 시 자동으로 또또 팝업 표시
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                showTtottoPopup('여기는 KRS 진단평가 화면이야!<br>나랑 같이 진단 평가 해보자!');
+            }, 500);
+        });
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

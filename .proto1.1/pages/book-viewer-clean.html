@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 독서 뷰어</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Common JS -->
+    <script src="../js/common.js"></script>
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+        body { background: linear-gradient(180deg, #FFF7ED 0%, #FEF3C7 50%, #ECFDF5 100%); }
+
+        /* iframe 컨테이너 - 전체 화면 */
+        .viewer-container {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            overflow: hidden;
+        }
+        .viewer-frame {
+            width: 100%;
+            height: calc(100% + 50px);
+            border: none;
+            margin-top: -50px;
+        }
+
+        /* 로딩 스피너 */
+        .loader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .loader-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f4f6;
+            border-top-color: #FF9F43;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 에러 메시지 */
+        .error-message {
+            max-width: 400px;
+            text-align: center;
+            padding: 24px;
+        }
+
+        /* 뒤로가기 버튼 */
+        .back-btn {
+            transition: all 0.2s ease;
+        }
+        .back-btn:hover {
+            transform: scale(1.05);
+        }
+        .back-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 헤더 자동 숨김 */
+        header {
+            transition: transform 0.3s ease;
+        }
+        header.hidden {
+            transform: translateY(-100%);
+        }
+
+        /* 뷰어 컨테이너 전체 화면 모드 */
+        .viewer-container.fullscreen {
+            top: 0;
+        }
+
+        /* 플로팅 완독 버튼 (헤더 숨김 시) */
+        .floating-test-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .floating-test-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .floating-test-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
+        }
+        .floating-test-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 640px) {
+            .viewer-container {
+                top: 48px;
+            }
+            .viewer-container.fullscreen {
+                top: 0;
+            }
+            .floating-test-btn {
+                bottom: 80px;
+                right: 16px;
+                padding: 10px 14px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 h-screen overflow-hidden">
+    <!-- Top Header (한 줄) -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-orange-100 shadow-sm">
+        <div class="flex items-center px-4 py-2.5">
+            <!-- Left: Back + Test Buttons -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <button onclick="goBack()" class="back-btn w-9 h-9 bg-orange-50 hover:bg-orange-100 rounded-lg flex items-center justify-center text-brand-primary transition-colors">
+                    <i class="fa-solid fa-arrow-left text-sm"></i>
+                </button>
+
+                <!-- 챗봇 테스트 버튼 -->
+                <button onclick="toggleBuddyTestPanel()" class="bg-green-600 hover:bg-green-500 px-2.5 py-1.5 rounded-lg text-white text-xs font-bold transition-colors flex items-center gap-1.5" title="챗봇 테스트 모드">
+                    <span>●</span>
+                    <span class="hidden sm:inline">챗봇 테스트</span>
+                </button>
+
+                <!-- 완독 테스트 버튼 -->
+                <button onclick="testBookCompletion()" class="bg-green-100 hover:bg-green-200 px-2.5 py-1.5 rounded-lg text-green-700 text-xs font-bold transition-colors flex items-center gap-1.5" title="완독 테스트">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span class="hidden sm:inline">완독</span>
+                </button>
+            </div>
+
+            <!-- Center: Title (중앙 정렬) -->
+            <div class="flex-1 flex flex-col items-center justify-center text-center px-4">
+                <h1 class="font-noto text-sm font-bold text-gray-800" id="content-title">오즈의 마법사</h1>
+                <p class="text-xs text-gray-400" id="content-subtitle">AI 버디와 함께 읽기</p>
+            </div>
+
+            <!-- Right: Badge -->
+            <div class="flex items-center gap-1.5 bg-gradient-to-r from-orange-50 to-amber-50 px-2.5 py-1.5 rounded-lg border border-orange-100 flex-shrink-0">
+                <span class="text-base">🐿️</span>
+                <span class="font-noto text-xs text-brand-primary font-bold hidden sm:inline">Lv.5</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 플로팅 완독 테스트 버튼 (헤더 숨김 시 표시) -->
+    <button onclick="testBookCompletion()" class="floating-test-btn font-noto" id="floating-test-btn">
+        <i class="fa-solid fa-check-circle"></i>
+        <span>완독 테스트</span>
+    </button>
+
+    <!-- Viewer Container -->
+    <div class="viewer-container" id="viewer-container">
+        <!-- Loading Overlay -->
+        <div class="loader-overlay" id="loader-overlay">
+            <div class="loader-spinner"></div>
+            <p class="font-noto text-gray-600 mt-4">독서 뷰어를 불러오는 중...</p>
+        </div>
+
+        <!-- Book Viewer (독서뷰어만) -->
+        <iframe id="book-viewer-frame"
+            class="viewer-frame"
+            src="../../북클럽3.0_통합뷰어/prototype/1.통합뷰어/북클럽3.0_독서뷰어_v0.3.html"
+            title="독서 뷰어">
+        </iframe>
+
+        <!-- Error Message (hidden by default) -->
+        <div class="error-message hidden" id="error-message">
+            <div class="text-6xl mb-4">😢</div>
+            <h3 class="font-noto text-xl text-gray-800 mb-2">뷰어를 불러올 수 없습니다</h3>
+            <p class="text-sm text-gray-500 mb-4">파일 경로를 확인해주세요.</p>
+            <button onclick="location.reload()" class="px-6 py-2 bg-brand-primary text-white rounded-xl hover:bg-orange-600 transition-colors">
+                <i class="fa-solid fa-rotate-right mr-2"></i>다시 시도
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * postMessage 통신 수신
+         */
+        window.addEventListener('message', (event) => {
+            const { type, data } = event.data;
+            console.log('[Viewer] Message received:', type, data);
+
+            switch (type) {
+                case 'VIEWER_READY':
+                    console.log('[Viewer] Book viewer is ready');
+                    break;
+
+                case 'PAGE_CHANGED':
+                    console.log('[Viewer] Page changed:', data);
+                    handlePageProgress(data);
+                    break;
+
+                case 'BOOK_COMPLETED':
+                    console.log('[Viewer] Book reading completed:', data);
+                    handleBookCompletion(data);
+                    break;
+
+                case 'UI_VISIBILITY_CHANGED':
+                    console.log('[Viewer] UI visibility changed:', data);
+                    handleUIVisibilityChange(data.visible);
+                    break;
+
+                default:
+                    console.warn('[Viewer] Unknown message type:', type);
+            }
+        });
+
+        /**
+         * 페이지 진행률 업데이트
+         */
+        function handlePageProgress(data) {
+            const progressData = {
+                bookId: data.bookId,
+                currentPage: data.currentPage || 1,
+                totalPages: data.totalPages || 32,
+                percentage: data.percentage || 0,
+                lastRead: new Date().toISOString()
+            };
+
+            // 현재 책 정보 업데이트
+            const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+            currentBook.currentPage = progressData.currentPage;
+            currentBook.totalPages = progressData.totalPages;
+            currentBook.percentage = progressData.percentage;
+            currentBook.lastRead = progressData.lastRead;
+            sessionStorage.setItem('currentBook', JSON.stringify(currentBook));
+
+            // 읽기 진행률 저장
+            sessionStorage.setItem('readingProgress', JSON.stringify(progressData));
+
+            console.log('[Viewer] Progress updated:', progressData);
+        }
+
+        /**
+         * 완독 이벤트 처리
+         */
+        function handleBookCompletion(data) {
+            const completionData = {
+                bookId: data.bookId,
+                bookTitle: data.bookTitle,
+                completedAt: new Date().toISOString(),
+                readingTime: data.readingTime || 0,
+                pageCount: data.pageCount || 0
+            };
+
+            // sessionStorage에 저장
+            const completions = JSON.parse(sessionStorage.getItem('bookCompletions') || '[]');
+            completions.push(completionData);
+            sessionStorage.setItem('bookCompletions', JSON.stringify(completions));
+
+            // 완독 플래그 설정
+            sessionStorage.setItem('bookJustCompleted', 'true');
+            sessionStorage.setItem('lastCompletedBook', JSON.stringify(completionData));
+
+            console.log('[Viewer] Book completion saved:', completionData);
+        }
+
+        /**
+         * 완독 테스트 (개발용)
+         */
+        function testBookCompletion() {
+            const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+
+            const testData = {
+                bookId: currentBook.id || 'test-book-1',
+                bookTitle: currentBook.title || '테스트 도서',
+                completedAt: new Date().toISOString(),
+                readingTime: 1200,
+                pageCount: 32
+            };
+
+            console.log('[Test] Simulating book completion:', testData);
+            handleBookCompletion(testData);
+
+            alert('✅ 완독 이벤트가 발생했습니다!\n홈으로 돌아가서 완독 뱃지를 확인하세요.');
+        }
+
+        /**
+         * 챗봇 테스트 패널 토글
+         */
+        function toggleBuddyTestPanel() {
+            const frame = document.getElementById('book-viewer-frame');
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({
+                    type: 'TOGGLE_BUDDY_TEST_PANEL'
+                }, '*');
+            }
+        }
+
+        /**
+         * iframe UI 가시성 변경 처리
+         */
+        function handleUIVisibilityChange(visible) {
+            if (visible) {
+                showHeader();
+            } else {
+                hideHeader();
+            }
+        }
+
+        /**
+         * iframe 로딩 완료
+         */
+        document.getElementById('book-viewer-frame').addEventListener('load', () => {
+            console.log('[Viewer] Book viewer loaded');
+            setTimeout(() => {
+                document.getElementById('loader-overlay').style.display = 'none';
+            }, 500);
+
+            // 사용자 정보 전달
+            const userInfo = AppState.getUserInfo();
+            const frame = document.getElementById('book-viewer-frame');
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({
+                    type: 'USER_INFO',
+                    data: userInfo
+                }, '*');
+            }
+        });
+
+        /**
+         * iframe 로딩 에러
+         */
+        document.getElementById('book-viewer-frame').addEventListener('error', () => {
+            console.error('[Viewer] Failed to load book viewer');
+            document.getElementById('loader-overlay').style.display = 'none';
+            document.getElementById('error-message').classList.remove('hidden');
+        });
+
+        /**
+         * 헤더 토글 기능
+         */
+        let headerVisible = true;
+        const header = document.querySelector('header');
+        const viewerContainer = document.getElementById('viewer-container');
+        const floatingBtn = document.getElementById('floating-test-btn');
+
+        function showHeader() {
+            headerVisible = true;
+            header.classList.remove('hidden');
+            viewerContainer.classList.remove('fullscreen');
+            floatingBtn.classList.remove('visible');
+        }
+
+        function hideHeader() {
+            headerVisible = false;
+            header.classList.add('hidden');
+            viewerContainer.classList.add('fullscreen');
+            floatingBtn.classList.add('visible');
+        }
+
+        function toggleHeader() {
+            if (headerVisible) {
+                hideHeader();
+            } else {
+                showHeader();
+            }
+
+            // iframe UI도 함께 토글
+            const frame = document.getElementById('book-viewer-frame');
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({
+                    type: 'TOGGLE_UI'
+                }, '*');
+            }
+        }
+
+        // 화면 전체 클릭 시 헤더 토글
+        let clickListenerActive = false;
+
+        // iframe이 로드되면 클릭 감지를 위한 오버레이 추가
+        function enableClickToggle() {
+            if (clickListenerActive) return;
+            clickListenerActive = true;
+
+            // iframe 위에 투명 오버레이를 잠깐 보여줬다 숨기는 방식으로 클릭 감지
+            document.addEventListener('click', (e) => {
+                // 헤더나 버튼 클릭은 무시
+                if (e.target.closest('header') || e.target.closest('.floating-test-btn')) {
+                    return;
+                }
+                toggleHeader();
+            });
+
+            // iframe 영역 클릭도 감지
+            window.addEventListener('blur', () => {
+                // iframe 클릭 시 blur 이벤트 발생
+                setTimeout(() => {
+                    if (document.activeElement.tagName === 'IFRAME') {
+                        toggleHeader();
+                    }
+                }, 100);
+            });
+        }
+
+        // 스페이스바/ESC로 토글
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Escape') {
+                e.preventDefault();
+                toggleHeader();
+            }
+        });
+
+        /**
+         * 초기화
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Viewer] Book viewer initialized');
+
+            // 책 정보 표시
+            const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+            if (currentBook.title) {
+                document.getElementById('content-title').textContent = currentBook.title;
+                document.getElementById('content-subtitle').textContent = currentBook.author || 'AI 버디와 함께 읽기';
+            }
+
+            // 클릭 토글 활성화
+            enableClickToggle();
+        });
+    </script>
+</body>
+</html>

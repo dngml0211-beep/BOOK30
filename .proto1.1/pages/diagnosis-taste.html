@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 독서 취향 진단</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1',
+                            duo: { green: '#58CC02', blue: '#1CB0F6', purple: '#CE82FF', orange: '#FF9600', red: '#FF4B4B' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        .taste-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .taste-card:hover {
+            transform: translateY(-5px) scale(1.03);
+        }
+        .taste-card:active {
+            transform: scale(0.97);
+        }
+        .taste-card.selected {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 4px #1CB0F6, 0 20px 40px rgba(28, 176, 246, 0.3);
+        }
+        .taste-card.selected .check-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .progress-fill {
+            transition: width 0.5s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        .sparkle {
+            animation: sparkle 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50 font-sans text-gray-800 min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-blue-100 shadow-sm">
+        <div class="max-w-4xl mx-auto px-6 py-3">
+            <div class="flex items-center justify-between mb-2">
+                <button onclick="confirmExit()" class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <span class="text-brand-duo-blue font-bold">💖 독서 취향</span>
+                </div>
+                <div class="w-10"></div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div id="progress-bar" class="progress-fill h-full bg-gradient-to-r from-brand-duo-blue to-cyan-400 rounded-full" style="width: 20%"></div>
+            </div>
+            <div class="text-center mt-1">
+                <span class="text-xs text-gray-500"><span id="current-q">1</span> / 5</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6 py-8" id="quiz-container">
+        <!-- Character & Question -->
+        <div class="text-center mb-8">
+            <div class="inline-block relative mb-4">
+                <div class="w-20 h-20 bg-gradient-to-br from-brand-duo-blue to-cyan-400 rounded-full flex items-center justify-center text-4xl shadow-xl float">
+                    🐿️
+                </div>
+                <!-- Sparkles -->
+                <div class="absolute -top-2 -right-2 text-yellow-400 sparkle">✨</div>
+                <div class="absolute -bottom-1 -left-2 text-yellow-400 sparkle" style="animation-delay: 0.5s;">✨</div>
+            </div>
+            <h2 class="font-noto text-2xl text-gray-800 mb-2" id="question-text">
+                어떤 주인공이 나오는 이야기가 좋아?
+            </h2>
+            <p class="text-gray-500" id="question-hint">마음에 드는 것을 골라주세요!</p>
+        </div>
+
+        <!-- Taste Cards Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="cards-container">
+            <!-- Card 1 -->
+            <button onclick="selectCard(this, 0)" class="taste-card bg-white rounded-3xl p-5 shadow-lg border-2 border-transparent relative overflow-hidden group">
+                <div class="check-badge absolute top-3 right-3 w-8 h-8 bg-brand-duo-blue rounded-full flex items-center justify-center text-white opacity-0 transform scale-0 transition-all">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="w-16 h-16 bg-gradient-to-br from-amber-200 to-orange-300 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3 group-hover:scale-110 transition-transform shadow-md">
+                    🐕
+                </div>
+                <p class="font-noto text-lg text-gray-800">동물</p>
+                <p class="text-xs text-gray-400">귀여운 동물 친구들</p>
+            </button>
+
+            <!-- Card 2 -->
+            <button onclick="selectCard(this, 1)" class="taste-card bg-white rounded-3xl p-5 shadow-lg border-2 border-transparent relative overflow-hidden group">
+                <div class="check-badge absolute top-3 right-3 w-8 h-8 bg-brand-duo-blue rounded-full flex items-center justify-center text-white opacity-0 transform scale-0 transition-all">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-200 to-indigo-300 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3 group-hover:scale-110 transition-transform shadow-md">
+                    👦
+                </div>
+                <p class="font-noto text-lg text-gray-800">사람</p>
+                <p class="text-xs text-gray-400">나와 비슷한 친구들</p>
+            </button>
+
+            <!-- Card 3 -->
+            <button onclick="selectCard(this, 2)" class="taste-card bg-white rounded-3xl p-5 shadow-lg border-2 border-transparent relative overflow-hidden group">
+                <div class="check-badge absolute top-3 right-3 w-8 h-8 bg-brand-duo-blue rounded-full flex items-center justify-center text-white opacity-0 transform scale-0 transition-all">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="w-16 h-16 bg-gradient-to-br from-green-200 to-emerald-300 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3 group-hover:scale-110 transition-transform shadow-md">
+                    🌳
+                </div>
+                <p class="font-noto text-lg text-gray-800">자연</p>
+                <p class="text-xs text-gray-400">숲, 바다, 하늘 이야기</p>
+            </button>
+
+            <!-- Card 4 -->
+            <button onclick="selectCard(this, 3)" class="taste-card bg-white rounded-3xl p-5 shadow-lg border-2 border-transparent relative overflow-hidden group">
+                <div class="check-badge absolute top-3 right-3 w-8 h-8 bg-brand-duo-blue rounded-full flex items-center justify-center text-white opacity-0 transform scale-0 transition-all">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="w-16 h-16 bg-gradient-to-br from-pink-200 to-rose-300 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3 group-hover:scale-110 transition-transform shadow-md">
+                    👸
+                </div>
+                <p class="font-noto text-lg text-gray-800">공주님</p>
+                <p class="text-xs text-gray-400">왕자와 공주 이야기</p>
+            </button>
+
+            <!-- Card 5 -->
+            <button onclick="selectCard(this, 4)" class="taste-card bg-white rounded-3xl p-5 shadow-lg border-2 border-transparent relative overflow-hidden group">
+                <div class="check-badge absolute top-3 right-3 w-8 h-8 bg-brand-duo-blue rounded-full flex items-center justify-center text-white opacity-0 transform scale-0 transition-all">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-200 to-violet-300 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3 group-hover:scale-110 transition-transform shadow-md">
+                    🧙
+                </div>
+                <p class="font-noto text-lg text-gray-800">마법</p>
+                <p class="text-xs text-gray-400">신비로운 마법 세계</p>
+            </button>
+
+            <!-- Card 6 -->
+            <button onclick="selectCard(this, 5)" class="taste-card bg-white rounded-3xl p-5 shadow-lg border-2 border-transparent relative overflow-hidden group">
+                <div class="check-badge absolute top-3 right-3 w-8 h-8 bg-brand-duo-blue rounded-full flex items-center justify-center text-white opacity-0 transform scale-0 transition-all">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="w-16 h-16 bg-gradient-to-br from-red-200 to-orange-300 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3 group-hover:scale-110 transition-transform shadow-md">
+                    🗺️
+                </div>
+                <p class="font-noto text-lg text-gray-800">모험</p>
+                <p class="text-xs text-gray-400">신나는 탐험 이야기</p>
+            </button>
+        </div>
+    </main>
+
+    <!-- Exit Confirmation Modal -->
+    <div id="exit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="hideExitModal()"></div>
+        <div class="relative bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
+                    😢
+                </div>
+                <h3 class="font-noto text-2xl text-gray-800 mb-2">진단을 그만할까요?</h3>
+                <p class="text-gray-500 mb-6">지금까지의 진행이 저장되지 않아요.</p>
+                <div class="flex gap-3">
+                    <button onclick="hideExitModal()" class="flex-1 py-3 px-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                        계속하기
+                    </button>
+                    <button onclick="window.location.href='diagnosis.html'" class="flex-1 py-3 px-4 bg-brand-duo-red text-white rounded-xl font-bold hover:bg-red-600 transition-colors">
+                        나가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script>
+        let currentQuestion = 1;
+        let totalQuestions = 5;
+        let selectedTastes = [];
+
+        const questions = [
+            {
+                question: "어떤 주인공이 나오는 이야기가 좋아?",
+                hint: "마음에 드는 것을 골라주세요!",
+                cards: [
+                    { icon: "🐕", label: "동물", desc: "귀여운 동물 친구들", gradient: "from-amber-200 to-orange-300" },
+                    { icon: "👦", label: "사람", desc: "나와 비슷한 친구들", gradient: "from-blue-200 to-indigo-300" },
+                    { icon: "🌳", label: "자연", desc: "숲, 바다, 하늘 이야기", gradient: "from-green-200 to-emerald-300" },
+                    { icon: "👸", label: "공주님", desc: "왕자와 공주 이야기", gradient: "from-pink-200 to-rose-300" },
+                    { icon: "🧙", label: "마법", desc: "신비로운 마법 세계", gradient: "from-purple-200 to-violet-300" },
+                    { icon: "🗺️", label: "모험", desc: "신나는 탐험 이야기", gradient: "from-red-200 to-orange-300" }
+                ]
+            },
+            {
+                question: "어떤 분위기의 책이 좋아?",
+                hint: "가장 끌리는 것을 골라주세요!",
+                cards: [
+                    { icon: "😄", label: "밝고 신나는", desc: "웃음이 나오는 책", gradient: "from-yellow-200 to-amber-300" },
+                    { icon: "😌", label: "잔잔하고 따뜻한", desc: "마음이 편해지는 책", gradient: "from-sky-200 to-cyan-300" },
+                    { icon: "🤣", label: "재미있고 유쾌한", desc: "깔깔 웃게 되는 책", gradient: "from-orange-200 to-red-300" },
+                    { icon: "😲", label: "긴장감 넘치는", desc: "두근두근 조마조마", gradient: "from-violet-200 to-purple-300" }
+                ]
+            },
+            {
+                question: "그림이 어떤 책이 좋아?",
+                hint: "좋아하는 스타일을 골라주세요!",
+                cards: [
+                    { icon: "🎨", label: "화려한 그림", desc: "색이 예쁜 그림책", gradient: "from-pink-200 to-fuchsia-300" },
+                    { icon: "✏️", label: "귀여운 그림", desc: "동글동글 캐릭터", gradient: "from-teal-200 to-cyan-300" },
+                    { icon: "📷", label: "사진처럼 진짜 같은", desc: "실제 같은 그림", gradient: "from-gray-200 to-slate-300" },
+                    { icon: "🖍️", label: "단순한 그림", desc: "깔끔하고 심플한", gradient: "from-lime-200 to-green-300" }
+                ]
+            },
+            {
+                question: "책에서 뭘 알고 싶어?",
+                hint: "궁금한 것을 골라주세요!",
+                cards: [
+                    { icon: "🦕", label: "공룡/동물", desc: "신기한 생물들", gradient: "from-green-200 to-teal-300" },
+                    { icon: "🚀", label: "우주/과학", desc: "신비로운 우주", gradient: "from-indigo-200 to-blue-300" },
+                    { icon: "🚗", label: "탈것", desc: "자동차, 비행기, 기차", gradient: "from-red-200 to-rose-300" },
+                    { icon: "🏰", label: "역사/위인", desc: "옛날 이야기", gradient: "from-amber-200 to-yellow-300" },
+                    { icon: "🎭", label: "감정/마음", desc: "마음을 알아가는 책", gradient: "from-purple-200 to-pink-300" }
+                ]
+            },
+            {
+                question: "얼마나 긴 책이 좋아?",
+                hint: "편하게 읽을 수 있는 것을 골라주세요!",
+                cards: [
+                    { icon: "📄", label: "짧은 책", desc: "금방 읽을 수 있는", gradient: "from-green-200 to-emerald-300" },
+                    { icon: "📕", label: "적당한 책", desc: "이야기가 있는", gradient: "from-blue-200 to-cyan-300" },
+                    { icon: "📚", label: "긴 책", desc: "시리즈로 계속 보는", gradient: "from-purple-200 to-violet-300" }
+                ]
+            }
+        ];
+
+        function selectCard(card, index) {
+            // Toggle selection
+            if (card.classList.contains('selected')) {
+                card.classList.remove('selected');
+            } else {
+                // For single select questions, remove other selections
+                document.querySelectorAll('.taste-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+
+                // Auto advance after short delay
+                setTimeout(() => {
+                    nextQuestion();
+                }, 500);
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestion >= totalQuestions) {
+                // 진단 완료
+                alert('독서 취향 진단이 완료되었습니다!');
+                window.location.href = 'diagnosis.html';
+                return;
+            }
+
+            currentQuestion++;
+
+            // Update progress
+            document.getElementById('current-q').textContent = currentQuestion;
+            document.getElementById('progress-bar').style.width = (currentQuestion / totalQuestions * 100) + '%';
+
+            // Load new question
+            const q = questions[currentQuestion - 1];
+            document.getElementById('question-text').textContent = q.question;
+            document.getElementById('question-hint').textContent = q.hint;
+
+            // Rebuild cards
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            q.cards.forEach((card, i) => {
+                const btn = document.createElement('button');
+                btn.onclick = () => selectCard(btn, i);
+                btn.className = 'taste-card bg-white rounded-3xl p-5 shadow-lg border-2 border-transparent relative overflow-hidden group';
+                btn.innerHTML = `
+                    <div class="check-badge absolute top-3 right-3 w-8 h-8 bg-brand-duo-blue rounded-full flex items-center justify-center text-white opacity-0 transform scale-0 transition-all">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div class="w-16 h-16 bg-gradient-to-br ${card.gradient} rounded-2xl flex items-center justify-center text-4xl mx-auto mb-3 group-hover:scale-110 transition-transform shadow-md">
+                        ${card.icon}
+                    </div>
+                    <p class="font-noto text-lg text-gray-800">${card.label}</p>
+                    <p class="text-xs text-gray-400">${card.desc}</p>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function confirmExit() {
+            document.getElementById('exit-modal').classList.remove('hidden');
+        }
+
+        function hideExitModal() {
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

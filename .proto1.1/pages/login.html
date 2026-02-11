@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 로그인</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1', paper: '#FDFBF7'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+                        'floating': '0 20px 25px -5px rgba(255, 159, 67, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+
+    <style>
+        .login-bg { background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%); }
+        .step-transition { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease; }
+        .slide-out-left { transform: translateX(-50%); opacity: 0; pointer-events: none; }
+        .slide-in-right { transform: translateX(0); opacity: 1; pointer-events: auto; }
+        .slide-out-right { transform: translateX(50%); opacity: 0; pointer-events: none; }
+        .slide-start-right { transform: translateX(50%); opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body class="login-bg font-sans h-screen overflow-hidden">
+    <div class="flex w-full h-full items-center justify-center">
+        <!-- Login Container -->
+        <div class="relative w-full max-w-md mx-4">
+            <!-- Step 1: 이름/생년월일 -->
+            <div id="login-step-1" class="step-transition slide-in-right bg-white rounded-3xl p-8 shadow-2xl">
+                <!-- Logo -->
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-brand-primary to-orange-500 rounded-3xl flex items-center justify-center text-4xl shadow-lg animate-float">
+                        🐿️
+                    </div>
+                    <h1 class="font-noto text-3xl text-brand-primary">K-RS BookClub</h1>
+                    <p class="text-gray-500 mt-2">독서의 즐거움을 함께해요!</p>
+                </div>
+
+                <!-- Form -->
+                <form onsubmit="event.preventDefault(); goToStep2();">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">이름</label>
+                            <input type="text" id="input-name" placeholder="이름을 입력해주세요"
+                                class="w-full h-14 bg-gray-50 border-2 border-gray-200 rounded-2xl px-5 text-lg outline-none focus:border-brand-primary focus:bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">생년월일</label>
+                            <input type="date" id="input-birth"
+                                class="w-full h-14 bg-gray-50 border-2 border-gray-200 rounded-2xl px-5 text-lg outline-none focus:border-brand-primary focus:bg-white transition-all">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full h-14 mt-8 bg-brand-primary text-white rounded-2xl font-bold text-lg hover:bg-orange-600 transition-colors shadow-lg">
+                        다음 <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 2: 핸드폰 인증 -->
+            <div id="login-step-2" class="step-transition slide-start-right absolute top-0 left-0 w-full bg-white rounded-3xl p-8 shadow-2xl">
+                <!-- Back Button -->
+                <button onclick="goToStep1()" class="mb-6 text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-arrow-left text-xl"></i>
+                </button>
+
+                <!-- Header -->
+                <div class="mb-6">
+                    <p id="summary-info" class="text-sm text-brand-primary font-medium mb-1">우희님 (2015-03-15)</p>
+                    <h2 class="font-noto text-2xl text-gray-800">보호자 인증</h2>
+                    <p class="text-gray-500 text-sm mt-1">보호자님의 핸드폰 번호로 인증해주세요</p>
+                </div>
+
+                <!-- Form -->
+                <form onsubmit="event.preventDefault(); loginComplete();">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">핸드폰 번호</label>
+                            <div class="flex gap-2">
+                                <input type="tel" id="input-phone" placeholder="010-0000-0000"
+                                    class="flex-1 h-14 bg-gray-50 border-2 border-gray-200 rounded-2xl px-5 text-lg outline-none focus:border-brand-primary focus:bg-white transition-all">
+                                <button type="button" onclick="sendAuthCode()" class="px-6 h-14 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-colors whitespace-nowrap">
+                                    인증요청
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="auth-code-container" class="hidden">
+                            <label class="block text-sm font-medium text-gray-600 mb-2">인증번호</label>
+                            <input type="text" id="input-code" placeholder="인증번호 4자리" maxlength="4"
+                                oninput="checkCode()"
+                                class="w-full h-14 bg-gray-50 border-2 border-gray-200 rounded-2xl px-5 text-lg outline-none focus:border-brand-primary focus:bg-white transition-all text-center tracking-widest font-bold">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-start" disabled class="w-full h-14 mt-8 bg-gray-300 text-white rounded-2xl font-bold text-lg cursor-not-allowed transition-all">
+                        시작하기 🚀
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script>
+        // Step Navigation
+        function goToStep2() {
+            const name = document.getElementById('input-name').value;
+            const birth = document.getElementById('input-birth').value;
+
+            if (!name || !birth) {
+                alert("이름과 생년월일을 입력해주세요!");
+                return;
+            }
+
+            // 사용자 정보 저장
+            AppState.setUserInfo({ name: name, birth: birth });
+            document.getElementById('summary-info').innerText = `${name}님 (${birth})`;
+
+            // 애니메이션
+            document.getElementById('login-step-1').classList.remove('slide-in-right');
+            document.getElementById('login-step-1').classList.add('slide-out-left');
+            document.getElementById('login-step-2').classList.remove('slide-start-right');
+            document.getElementById('login-step-2').classList.add('slide-in-right');
+        }
+
+        function goToStep1() {
+            document.getElementById('login-step-2').classList.remove('slide-in-right');
+            document.getElementById('login-step-2').classList.add('slide-out-right');
+            document.getElementById('login-step-1').classList.remove('slide-out-left');
+            document.getElementById('login-step-1').classList.add('slide-in-right');
+        }
+
+        function sendAuthCode() {
+            const phone = document.getElementById('input-phone').value;
+            if (!phone) {
+                alert("번호를 입력해주세요.");
+                return;
+            }
+            alert("인증번호가 전송되었습니다.");
+            document.getElementById('auth-code-container').classList.remove('hidden');
+        }
+
+        function checkCode() {
+            const code = document.getElementById('input-code').value;
+            const btn = document.getElementById('btn-start');
+
+            if (code.length === 4) {
+                btn.disabled = false;
+                btn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+                btn.classList.add('bg-brand-primary', 'hover:bg-orange-600', 'cursor-pointer', 'shadow-lg');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('bg-gray-300', 'cursor-not-allowed');
+                btn.classList.remove('bg-brand-primary', 'hover:bg-orange-600', 'cursor-pointer', 'shadow-lg');
+            }
+        }
+
+        function loginComplete() {
+            AppState.setLoggedIn(true);
+            alert("환영합니다!");
+            window.location.href = 'home.html';
+        }
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

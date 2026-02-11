@@ -1,0 +1,218 @@
+/* ============================================
+   북클럽 3.0 - 반응형 스타일 (태블릿 최적화)
+   ============================================ */
+
+/* === 태블릿 세로 (768px ~ 899px) === */
+@media (min-width: 768px) and (max-width: 899px) {
+
+    /* Main Content */
+    .main-content {
+        padding: 1.5rem;
+    }
+
+    /* Home - Mission Cards */
+    .mission-cards {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .mission-card-main {
+        min-width: 100%;
+    }
+
+    /* Library - Book Grid */
+    .book-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    /* Report - Stat Cards */
+    .stat-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .report-chart-section {
+        grid-template-columns: 1fr;
+    }
+
+    /* MyPage */
+    .mypage-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === 태블릿 가로 (900px ~ 1024px) === */
+@media (min-width: 900px) and (max-width: 1024px) {
+
+    /* Main Content */
+    .main-content {
+        padding: 2rem;
+    }
+
+    /* Home - Mission Cards */
+    .mission-cards {
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .mission-card-main {
+        min-width: 280px;
+    }
+
+    /* Library - Book Grid */
+    .book-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+    }
+
+    /* Report - Stat Cards */
+    .stat-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .report-chart-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* === 전체화면 모달 (AI 도구) - 태블릿 최적화 === */
+@media (max-width: 1024px) {
+    /* Video Retelling */
+    .video-tool-sidebar {
+        width: 180px;
+    }
+
+    .video-scene-thumb {
+        height: 80px;
+    }
+
+    .video-main-area {
+        padding: 1rem;
+    }
+
+    /* Debate */
+    .debate-board {
+        max-width: 90vw;
+        padding: 1.5rem;
+    }
+
+    .debate-board-inner {
+        aspect-ratio: 2/1;
+    }
+
+    .vote-btn {
+        padding: 1rem 1.5rem;
+    }
+
+    .vote-btn-icon {
+        font-size: 2.5rem;
+    }
+
+    /* Question Lens */
+    .question-cards {
+        gap: 1.5rem;
+    }
+
+    .question-card {
+        width: 160px;
+        height: 220px;
+    }
+
+    .question-card-icon {
+        font-size: 3rem;
+    }
+}
+
+/* === 공통 반응형 유틸리티 === */
+
+/* 태블릿 이하에서 숨김 */
+.hide-tablet {
+    display: block;
+}
+
+@media (max-width: 1024px) {
+    .hide-tablet {
+        display: none;
+    }
+}
+
+/* 태블릿 이하에서만 표시 */
+.show-tablet {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .show-tablet {
+        display: block;
+    }
+}
+
+/* 모바일에서 숨김 */
+.hide-mobile {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none;
+    }
+}
+
+/* 모바일에서만 표시 */
+.show-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .show-mobile {
+        display: block;
+    }
+}
+
+/* === 모바일 하단 네비 콘텐츠 여백 === */
+@media (max-width: 768px) {
+    main {
+        padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+}
+
+/* === 터치 디바이스 최적화 === */
+@media (hover: none) and (pointer: coarse) {
+    /* 터치 타겟 최소 크기 보장 */
+    .nav-link,
+    .tool-btn,
+    button {
+        min-height: 44px;
+    }
+
+    /* 호버 효과 비활성화 */
+    .card-hover:hover {
+        transform: none;
+        box-shadow: inherit;
+    }
+
+    /* 터치 피드백 추가 */
+    .nav-link:active,
+    .tool-btn:active {
+        background: #FFF7ED;
+        transform: scale(0.98);
+    }
+}
+
+/* === 안전 영역 (노치/홈 인디케이터) === */
+@supports (padding: max(0px)) {
+    .sidebar {
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    }
+
+    .fullscreen-modal {
+        padding-top: max(1rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* === 다크 모드 지원 (선택적) === */
+@media (prefers-color-scheme: dark) {
+    /* 다크 모드 스타일은 필요시 추가 */
+}

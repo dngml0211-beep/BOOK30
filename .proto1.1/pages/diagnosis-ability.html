@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 독서 능력 진단</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1',
+                            duo: { green: '#58CC02', blue: '#1CB0F6', purple: '#CE82FF', orange: '#FF9600', red: '#FF4B4B' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        .answer-btn {
+            transition: all 0.2s ease;
+        }
+        .answer-btn:hover:not(.selected):not(.correct):not(.wrong) {
+            transform: scale(1.02);
+            border-color: #58CC02;
+        }
+        .answer-btn.selected {
+            border-color: #58CC02;
+            background: linear-gradient(135deg, #58CC02 0%, #46a302 100%);
+            color: white;
+        }
+        .answer-btn.correct {
+            border-color: #58CC02;
+            background: linear-gradient(135deg, #58CC02 0%, #46a302 100%);
+            color: white;
+        }
+        .answer-btn.wrong {
+            border-color: #FF4B4B;
+            background: linear-gradient(135deg, #FF4B4B 0%, #e63e3e 100%);
+            color: white;
+        }
+
+        .book-page {
+            background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+            box-shadow:
+                inset 0 0 30px rgba(0,0,0,0.03),
+                0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            transition: width 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .pop {
+            animation: pop 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 font-sans text-gray-800 min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-green-100 shadow-sm">
+        <div class="max-w-4xl mx-auto px-6 py-3">
+            <div class="flex items-center justify-between mb-2">
+                <button onclick="confirmExit()" class="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <span class="text-brand-duo-green font-bold">📚 독서 능력</span>
+                </div>
+                <div class="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full">
+                    <i class="fa-solid fa-heart text-brand-duo-red"></i>
+                    <span class="font-bold text-gray-700" id="hearts">5</span>
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div id="progress-bar" class="progress-fill h-full bg-gradient-to-r from-brand-duo-green to-green-400 rounded-full" style="width: 10%"></div>
+            </div>
+            <div class="text-center mt-1">
+                <span class="text-xs text-gray-500"><span id="current-q">1</span> / 10</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6 py-6" id="quiz-container">
+        <!-- Reading Passage -->
+        <div class="book-page rounded-3xl p-6 md:p-8 mb-6 border-2 border-amber-200">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-2xl">📖</span>
+                <span class="font-noto text-lg text-amber-700">마법사의 물약</span>
+                <span class="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">1장</span>
+            </div>
+            <div class="bg-white/50 rounded-2xl p-5 border border-amber-100">
+                <p class="text-gray-700 leading-relaxed text-lg" id="passage-text">
+                    옛날 옛적, 깊은 숲속에 <strong class="text-amber-600">마법사</strong>가 살고 있었어요.
+                    어느 날, <strong class="text-amber-600">왕비</strong>가 병에 걸렸다는 소식이 들려왔어요.
+                    <br><br>
+                    "내가 만든 <strong class="text-purple-600">마법의 물약</strong>이 왕비님을 낫게 할 수 있을 거야!"
+                    <br><br>
+                    마법사는 물약 재료를 찾기 위해 <strong class="text-green-600">숲속 깊은 곳</strong>으로 떠났어요.
+                    파란 꽃잎, 반짝이는 이슬, 그리고 무지개빛 나비 날개가 필요했거든요.
+                </p>
+            </div>
+        </div>
+
+        <!-- Question Area -->
+        <div class="bg-white rounded-3xl p-6 shadow-lg border-2 border-green-100">
+            <!-- Question -->
+            <div class="flex items-start gap-3 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-brand-duo-green to-green-400 rounded-full flex items-center justify-center text-white text-xl flex-shrink-0 shadow-lg">
+                    <i class="fa-solid fa-question"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-brand-duo-green font-bold mb-1">문제 1</p>
+                    <h3 class="font-noto text-xl text-gray-800" id="question-text">
+                        물약 재료를 찾기 위해 숲속으로 떠난 사람은 누구인가요?
+                    </h3>
+                </div>
+            </div>
+
+            <!-- Answer Options -->
+            <div class="grid grid-cols-2 gap-4" id="answers-container">
+                <button onclick="selectAnswer(this, 0)" class="answer-btn flex items-center gap-4 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:shadow-md text-left">
+                    <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center text-3xl">
+                        👑
+                    </div>
+                    <span class="font-medium text-gray-700">왕</span>
+                </button>
+
+                <button onclick="selectAnswer(this, 1)" class="answer-btn flex items-center gap-4 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:shadow-md text-left">
+                    <div class="w-14 h-14 bg-pink-100 rounded-xl flex items-center justify-center text-3xl">
+                        👸
+                    </div>
+                    <span class="font-medium text-gray-700">왕비</span>
+                </button>
+
+                <button onclick="selectAnswer(this, 2)" class="answer-btn flex items-center gap-4 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:shadow-md text-left" data-correct="true">
+                    <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center text-3xl">
+                        🧙
+                    </div>
+                    <span class="font-medium text-gray-700">마법사</span>
+                </button>
+
+                <button onclick="selectAnswer(this, 3)" class="answer-btn flex items-center gap-4 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:shadow-md text-left">
+                    <div class="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center text-3xl">
+                        💪
+                    </div>
+                    <span class="font-medium text-gray-700">장사</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Feedback Area (Hidden initially) -->
+        <div id="feedback-area" class="hidden mt-6">
+            <div id="feedback-correct" class="hidden bg-gradient-to-r from-green-500 to-brand-duo-green rounded-2xl p-5 text-white shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl">
+                        🎉
+                    </div>
+                    <div>
+                        <p class="font-noto text-xl">정답이에요!</p>
+                        <p class="text-green-100 text-sm">잘했어요, 계속 가볼까요?</p>
+                    </div>
+                </div>
+            </div>
+            <div id="feedback-wrong" class="hidden bg-gradient-to-r from-red-500 to-brand-duo-red rounded-2xl p-5 text-white shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl">
+                        😅
+                    </div>
+                    <div>
+                        <p class="font-noto text-xl">아쉬워요!</p>
+                        <p class="text-red-100 text-sm" id="wrong-explanation">마법사가 물약 재료를 찾으러 갔어요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Button (Hidden initially) -->
+        <button id="next-btn" onclick="nextQuestion()" class="hidden w-full mt-6 py-4 bg-gradient-to-r from-brand-duo-green to-green-500 text-white font-noto text-xl rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
+            다음 문제 <i class="fa-solid fa-arrow-right ml-2"></i>
+        </button>
+    </main>
+
+    <!-- Exit Confirmation Modal -->
+    <div id="exit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="hideExitModal()"></div>
+        <div class="relative bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
+                    😢
+                </div>
+                <h3 class="font-noto text-2xl text-gray-800 mb-2">진단을 그만할까요?</h3>
+                <p class="text-gray-500 mb-6">지금까지의 진행이 저장되지 않아요.</p>
+                <div class="flex gap-3">
+                    <button onclick="hideExitModal()" class="flex-1 py-3 px-4 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                        계속하기
+                    </button>
+                    <button onclick="window.location.href='diagnosis.html'" class="flex-1 py-3 px-4 bg-brand-duo-red text-white rounded-xl font-bold hover:bg-red-600 transition-colors">
+                        나가기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script>
+        let currentQuestion = 1;
+        let totalQuestions = 10;
+        let hearts = 5;
+        let selectedAnswer = null;
+
+        // Sample questions data
+        const questions = [
+            {
+                passage: `옛날 옛적, 깊은 숲속에 <strong class="text-amber-600">마법사</strong>가 살고 있었어요.
+                    어느 날, <strong class="text-amber-600">왕비</strong>가 병에 걸렸다는 소식이 들려왔어요.
+                    <br><br>
+                    "내가 만든 <strong class="text-purple-600">마법의 물약</strong>이 왕비님을 낫게 할 수 있을 거야!"
+                    <br><br>
+                    마법사는 물약 재료를 찾기 위해 <strong class="text-green-600">숲속 깊은 곳</strong>으로 떠났어요.
+                    파란 꽃잎, 반짝이는 이슬, 그리고 무지개빛 나비 날개가 필요했거든요.`,
+                question: "물약 재료를 찾기 위해 숲속으로 떠난 사람은 누구인가요?",
+                answers: [
+                    { icon: "👑", text: "왕", correct: false },
+                    { icon: "👸", text: "왕비", correct: false },
+                    { icon: "🧙", text: "마법사", correct: true },
+                    { icon: "💪", text: "장사", correct: false }
+                ],
+                colors: ["blue", "pink", "purple", "orange"],
+                explanation: "마법사가 물약 재료를 찾으러 숲속으로 떠났어요."
+            },
+            {
+                passage: `마법사는 숲속을 헤매다가 <strong class="text-blue-600">파란 꽃</strong>을 발견했어요.
+                    <br><br>
+                    "드디어 찾았다! 이 꽃잎으로 물약을 만들 수 있어!"
+                    <br><br>
+                    하지만 꽃 옆에는 <strong class="text-red-600">커다란 곰</strong>이 자고 있었어요.
+                    마법사는 조심조심 꽃에 다가갔어요.`,
+                question: "파란 꽃 옆에서 자고 있던 것은 무엇인가요?",
+                answers: [
+                    { icon: "🐻", text: "곰", correct: true },
+                    { icon: "🐺", text: "늑대", correct: false },
+                    { icon: "🦊", text: "여우", correct: false },
+                    { icon: "🐰", text: "토끼", correct: false }
+                ],
+                colors: ["amber", "gray", "orange", "pink"],
+                explanation: "파란 꽃 옆에는 커다란 곰이 자고 있었어요."
+            },
+            {
+                passage: `마법사가 꽃을 따려는 순간, 곰이 눈을 떴어요!
+                    <br><br>
+                    "으르렁! 누가 내 잠을 깨웠어?"
+                    <br><br>
+                    마법사는 재빨리 <strong class="text-purple-600">투명 마법</strong>을 걸었어요.
+                    곰은 아무도 없는 것을 보고 다시 잠이 들었답니다.`,
+                question: "마법사는 곰에게서 어떻게 숨었나요?",
+                answers: [
+                    { icon: "🏃", text: "도망쳤어요", correct: false },
+                    { icon: "🫥", text: "투명해졌어요", correct: true },
+                    { icon: "🌳", text: "나무 뒤에 숨었어요", correct: false },
+                    { icon: "🗣️", text: "말로 설득했어요", correct: false }
+                ],
+                colors: ["green", "purple", "amber", "blue"],
+                explanation: "마법사가 투명 마법을 걸어서 곰에게 보이지 않게 되었어요."
+            }
+        ];
+
+        function selectAnswer(btn, index) {
+            if (selectedAnswer !== null) return;
+            selectedAnswer = index;
+
+            const allBtns = document.querySelectorAll('.answer-btn');
+            allBtns.forEach(b => b.classList.remove('selected'));
+
+            const currentQ = questions[currentQuestion - 1];
+            const isCorrect = currentQ.answers[index].correct;
+
+            if (isCorrect) {
+                btn.classList.add('correct', 'pop');
+                document.getElementById('feedback-area').classList.remove('hidden');
+                document.getElementById('feedback-correct').classList.remove('hidden');
+                document.getElementById('feedback-wrong').classList.add('hidden');
+            } else {
+                btn.classList.add('wrong', 'shake');
+                hearts--;
+                document.getElementById('hearts').textContent = hearts;
+
+                // Highlight correct answer
+                allBtns.forEach((b, i) => {
+                    if (currentQ.answers[i].correct) {
+                        b.classList.add('correct');
+                    }
+                });
+
+                document.getElementById('feedback-area').classList.remove('hidden');
+                document.getElementById('feedback-wrong').classList.remove('hidden');
+                document.getElementById('feedback-correct').classList.add('hidden');
+                document.getElementById('wrong-explanation').textContent = currentQ.explanation;
+            }
+
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            if (currentQuestion >= totalQuestions || currentQuestion >= questions.length) {
+                // 진단 완료
+                alert('독서 능력 진단이 완료되었습니다!');
+                window.location.href = 'diagnosis.html';
+                return;
+            }
+
+            currentQuestion++;
+            selectedAnswer = null;
+
+            // Update progress
+            document.getElementById('current-q').textContent = currentQuestion;
+            document.getElementById('progress-bar').style.width = (currentQuestion / totalQuestions * 100) + '%';
+
+            // Load new question
+            const q = questions[currentQuestion - 1];
+            document.getElementById('passage-text').innerHTML = q.passage;
+            document.getElementById('question-text').textContent = q.question;
+
+            // Reset answers
+            const container = document.getElementById('answers-container');
+            container.innerHTML = '';
+            q.answers.forEach((ans, i) => {
+                const btn = document.createElement('button');
+                btn.onclick = () => selectAnswer(btn, i);
+                btn.className = `answer-btn flex items-center gap-4 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:shadow-md text-left`;
+                btn.innerHTML = `
+                    <div class="w-14 h-14 bg-${q.colors[i]}-100 rounded-xl flex items-center justify-center text-3xl">
+                        ${ans.icon}
+                    </div>
+                    <span class="font-medium text-gray-700">${ans.text}</span>
+                `;
+                container.appendChild(btn);
+            });
+
+            // Hide feedback
+            document.getElementById('feedback-area').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+        }
+
+        function confirmExit() {
+            document.getElementById('exit-modal').classList.remove('hidden');
+        }
+
+        function hideExitModal() {
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

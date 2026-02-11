@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - KRS 도서관</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1', paper: '#FDFBF7' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+        .font-batang { font-family: 'Gowun Batang', serif; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* === Header - Epic! Inspired Clean Design === */
+        .library-header {
+            background: white;
+            border-bottom: none;
+            box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+        }
+        .header-title-section {
+            padding: 22px 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+        .header-title i { color: #FF9F43; font-size: 22px; }
+
+        /* === Level Badge - Accent Pill === */
+        .current-level-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+            padding: 8px 18px;
+            border-radius: 24px;
+            color: #EA580C;
+            font-weight: 800;
+            font-size: 14px;
+            border: 1.5px solid #FDBA74;
+            box-shadow: 0 2px 8px rgba(234,88,12,0.1);
+        }
+        .current-level-badge i { font-size: 13px; color: #F97316; }
+
+        /* === Level Tabs - Ink Bar Style (Epic! Inspired) === */
+        .level-tabs-section {
+            padding: 0;
+            background: transparent;
+            margin: 0 -20px;
+            padding: 0 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .level-tabs-wrapper {
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+            padding: 0;
+        }
+        .level-tab {
+            flex-shrink: 0;
+            padding: 14px 18px;
+            border-radius: 0;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            position: relative;
+            opacity: 0.6;
+        }
+        .level-tab:hover {
+            color: #6b7280;
+            background: transparent;
+            opacity: 0.8;
+        }
+        .level-tab.active {
+            color: #EA580C;
+            border-bottom-color: #EA580C;
+            background: transparent;
+            font-weight: 800;
+            opacity: 1;
+        }
+        .level-tab.adjacent {
+            color: #6b7280;
+            opacity: 0.7;
+            background: transparent;
+            border-bottom-color: transparent;
+        }
+        .level-tab.locked {
+            color: #d1d5db;
+            opacity: 0.35;
+            cursor: not-allowed;
+            background: transparent;
+        }
+        .level-tab.locked::after {
+            content: '🔒';
+            font-size: 9px;
+            margin-left: 3px;
+        }
+        .level-tab.completed::before {
+            content: '✓';
+            font-size: 10px;
+            margin-right: 3px;
+            color: #10b981;
+        }
+
+        /* === Section Header === */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .section-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title i { color: #FF9F43; }
+        .section-count {
+            font-size: 13px;
+            font-weight: 700;
+            color: #6b7280;
+            background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+            padding: 7px 16px;
+            border-radius: 24px;
+            border: 1.5px solid #FDBA74;
+            box-shadow: 0 2px 8px rgba(234,88,12,0.08);
+            display: inline-flex;
+        }
+        .section-count span { color: #EA580C; font-weight: 800; }
+
+        /* === Week Progress Bar === */
+        .week-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 10px 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: none;
+        }
+        .week-progress-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            white-space: nowrap;
+        }
+        .week-progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .week-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #58CC02, #89E219);
+            border-radius: 99px;
+            transition: width 0.5s ease;
+        }
+        .week-progress-text {
+            font-size: 13px;
+            font-weight: 800;
+            color: #58CC02;
+        }
+
+        /* === Week Range Tabs === */
+        .week-tabs {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .week-tabs { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        }
+        .week-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 12px 10px;
+            border-radius: 14px;
+            background: #f9fafb;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .week-tab:hover { background: #e5e7eb; }
+        .week-tab.active {
+            background: #FFF7ED;
+            border-color: #FB923C;
+        }
+        .week-tab.completed {
+            background: #F0FDF4;
+            border-color: #86efac;
+        }
+        .week-tab.has-current {
+            background: #FFF7ED;
+            border: 2px solid #FDBA74;
+        }
+        .week-tab.locked {
+            background: #f9fafb;
+            border-color: transparent;
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .week-tab.locked:hover {
+            background: #f9fafb;
+        }
+        .week-tab-lock {
+            font-size: 10px;
+            margin-left: 2px;
+            opacity: 0.6;
+        }
+        .week-num {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+        }
+        .week-tab.active .week-num { color: #EA580C; }
+        .week-tab.completed .week-num { color: #16a34a; }
+        .week-tab.has-current .week-num { color: #EA580C; }
+        .week-tab.locked .week-num { color: #7b8290; }
+        /* 진행중 스피너 */
+        .week-tab-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2.5px solid #FDBA74;
+            border-top-color: #EA580C;
+            border-radius: 50%;
+            animation: weekSpin 0.8s linear infinite;
+        }
+        @keyframes weekSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* === Book Card Grid === */
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 480px) { .book-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+
+        /* === Book Card === */
+        .book-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.25s;
+        }
+        .book-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .book-card.locked {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .book-card.in-progress {
+            border: 2px solid #FF9F43;
+            box-shadow: 0 4px 16px rgba(255, 159, 67, 0.15);
+        }
+
+        /* Book Thumbnail */
+        .book-thumb {
+            position: relative;
+            aspect-ratio: 3/4;
+            background: linear-gradient(135deg, #f5f0e8, #ebe5db);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .book-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .book-thumb-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: #c4b8a8;
+        }
+        .book-thumb-placeholder i { font-size: 36px; }
+        .book-thumb-placeholder span { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; }
+
+        /* Book Badges */
+        .book-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .book-badge.core {
+            background: linear-gradient(135deg, #FF9F43, #f97316);
+            color: white;
+        }
+        .book-badge.managed {
+            background: linear-gradient(135deg, #54a0ff, #2e86de);
+            color: white;
+        }
+        .book-badge.ai-recommend {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            color: white;
+        }
+        .book-badge.completed {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            left: auto;
+            background: #10b981;
+            color: white;
+        }
+
+        /* Status Overlay */
+        .book-status-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.5);
+        }
+        .book-status-overlay.completed { background: rgba(16, 185, 129, 0.15); }
+        .book-status-overlay.locked { background: rgba(0,0,0,0.4); }
+        .book-status-overlay i {
+            font-size: 32px;
+            color: white;
+        }
+
+        /* Book Info */
+        .book-info {
+            padding: 14px;
+        }
+        .book-week {
+            font-size: 11px;
+            font-weight: 700;
+            color: #FF9F43;
+            margin-bottom: 4px;
+        }
+        .book-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.3;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .book-author {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+
+        /* Quiz Button */
+        .quiz-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            background: #f5f3f0;
+            border: 1.5px solid #e5e7eb;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quiz-btn:hover {
+            background: #FFF8F0;
+            border-color: #FFD4A0;
+            color: #FF9F43;
+        }
+        .quiz-btn.completed {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #10b981;
+        }
+        .quiz-btn.locked {
+            background: #f0f0f0;
+            color: #c0c0c0;
+            cursor: not-allowed;
+        }
+        .quiz-btn i { font-size: 14px; }
+
+        /* === Recommended Section === */
+        .recommended-section {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* === Responsive === */
+        @media (max-width: 768px) {
+            .header-title { font-size: 20px; }
+            .section-title { font-size: 15px; }
+            .level-tab { padding: 12px 14px; font-size: 13px; }
+            .current-level-badge { padding: 6px 14px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body class="bg-brand-bg font-sans text-gray-800 h-screen overflow-hidden">
+    <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars text-gray-600 text-lg"></i>
+    </button>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="flex w-full h-full">
+        <div id="sidebar-container"></div>
+
+        <main class="flex-1 h-full overflow-y-auto" id="main-scroll">
+            <!-- Sticky Header -->
+            <div class="sticky top-0 z-20 library-header">
+                <div class="px-5 md:px-8">
+                    <!-- Title Row -->
+                    <div class="header-title-section">
+                        <h1 class="header-title">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                            KRS 도서관
+                        </h1>
+                        <div class="current-level-badge">
+                            <i class="fa-solid fa-star"></i>
+                            현재 레벨: K2-2
+                        </div>
+                    </div>
+
+                    <!-- Level Tabs -->
+                    <div class="level-tabs-section">
+                        <div class="level-tabs-wrapper hide-scrollbar" id="level-tabs">
+                            <!-- JS renders level tabs -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="px-5 md:px-8 pt-6 pb-8">
+                <!-- Main Curriculum Section -->
+                <div class="main-curriculum-section" id="curriculum-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fa-solid fa-book-open"></i>
+                            메인 커리큘럼
+                        </div>
+                        <div class="section-count">
+                            K2-2 단계 · 총 <span>24</span>권
+                        </div>
+                    </div>
+
+                    <!-- Week Progress -->
+                    <div class="week-progress">
+                        <span class="week-progress-label">전체 진도</span>
+                        <div class="week-progress-bar">
+                            <div class="week-progress-fill" id="progress-fill" style="width: 8.3%;"></div>
+                        </div>
+                        <span class="week-progress-text" id="progress-text">2/24권 완료</span>
+                    </div>
+
+                    <!-- Week Range Tabs -->
+                    <div class="week-tabs" id="week-tabs">
+                        <!-- JS renders week tabs -->
+                    </div>
+
+                    <!-- Book Grid -->
+                    <div class="book-grid" id="curriculum-books">
+                        <!-- JS renders books -->
+                    </div>
+                </div>
+
+                <!-- KRS Recommended Books Section -->
+                <div class="recommended-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            KRS 추천도서
+                        </div>
+                    </div>
+                    <div class="section-count" style="margin-top: -8px; margin-bottom: 16px;">
+                        K2-2 단계 추천 · 총 <span>226</span>권
+                    </div>
+
+                    <!-- Vertical Grid Books -->
+                    <div class="book-grid" id="recommended-books">
+                        <!-- JS renders recommended books -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="logout-modal-container"></div>
+    <script src="../js/common.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+    // ============================================================
+    //  KRS Level Data
+    // ============================================================
+    const krsLevels = [
+        { id: 'PreK1', label: 'PreK1', grade: '만 4~5세', status: 'completed' },
+        { id: 'PreK2', label: 'PreK2', grade: '만 6세', status: 'completed' },
+        { id: 'K1-1', label: 'K1-1', grade: '초1-1', status: 'completed' },
+        { id: 'K1-2', label: 'K1-2', grade: '초1-2', status: 'completed' },
+        { id: 'K2-1', label: 'K2-1', grade: '초2-1', status: 'adjacent' },
+        { id: 'K2-2', label: 'K2-2', grade: '초2-2', status: 'current' },
+        { id: 'K3-1', label: 'K3-1', grade: '초3-1', status: 'adjacent' },
+        { id: 'K3-2', label: 'K3-2', grade: '초3-2', status: 'locked' },
+        { id: 'K4', label: 'K4', grade: '초4', status: 'locked' },
+        { id: 'K5', label: 'K5', grade: '초5', status: 'locked' },
+        { id: 'K6', label: 'K6', grade: '초6', status: 'locked' },
+        { id: 'K7', label: 'K7', grade: '중1', status: 'locked' },
+        { id: 'K8', label: 'K8', grade: '중2~고1', status: 'locked' },
+        { id: 'K9', label: 'K9', grade: '고2~대1', status: 'locked' },
+        { id: 'K10', label: 'K10', grade: '성인', status: 'locked' }
+    ];
+
+    let currentLevel = 'K2-2';
+
+    // ============================================================
+    //  Curriculum Books Data (24 weeks)
+    // ============================================================
+    const curriculumBooks = [
+        // Month 1
+        { week: 1, type: 'core', title: '오즈의 마법사', author: 'L. 프랭크 바움', img: '../img/book1.jpg', status: 'completed', quizDone: true },
+        { week: 2, type: 'managed', title: '약속은 즐거워', author: '박은경', img: '../img/book2.jpg', status: 'completed', quizDone: true },
+        { week: 3, type: 'core', title: '숭숭이와 나', author: '지윤경', img: '../img/book3.jpg', status: 'in-progress', quizDone: false },
+        { week: 4, type: 'managed', title: '빨간머리 앤', author: '몽고메리', img: '../img/book4.jpg', status: 'locked', quizDone: false },
+        // Month 2
+        { week: 5, type: 'core', title: '나무를 심은 사람', author: '장 지오노', img: '', status: 'locked', quizDone: false },
+        { week: 6, type: 'managed', title: '꿈꾸는 로봇', author: '이지현', img: '', status: 'locked', quizDone: false },
+        { week: 7, type: 'core', title: '작은 영웅', author: '김태영', img: '', status: 'locked', quizDone: false },
+        { week: 8, type: 'managed', title: '신비한 동굴', author: '박소연', img: '', status: 'locked', quizDone: false },
+        // Month 3
+        { week: 9, type: 'core', title: '구름 위의 세상', author: '최은영', img: '', status: 'locked', quizDone: false },
+        { week: 10, type: 'managed', title: '미래의 발명가', author: '한지은', img: '', status: 'locked', quizDone: false },
+        { week: 11, type: 'core', title: '바다의 비밀', author: '아놀드 로벨', img: '', status: 'locked', quizDone: false },
+        { week: 12, type: 'managed', title: '별빛 마을', author: '오 헨리', img: '', status: 'locked', quizDone: false },
+        // Month 4
+        { week: 13, type: 'core', title: '하늘을 나는 꿈', author: '윤동주', img: '', status: 'locked', quizDone: false },
+        { week: 14, type: 'managed', title: '시간 여행자', author: '마르쿠스 피스터', img: '', status: 'locked', quizDone: false },
+        { week: 15, type: 'core', title: '마법의 정원', author: '장 지오노', img: '', status: 'locked', quizDone: false },
+        { week: 16, type: 'managed', title: '공룡 대탐험', author: '한지은', img: '', status: 'locked', quizDone: false },
+        // Month 5
+        { week: 17, type: 'core', title: '우주 탐험대', author: '이수정', img: '', status: 'locked', quizDone: false },
+        { week: 18, type: 'managed', title: '비밀의 열쇠', author: '김서영', img: '', status: 'locked', quizDone: false },
+        { week: 19, type: 'core', title: '용기의 모험', author: '최민준', img: '', status: 'locked', quizDone: false },
+        { week: 20, type: 'managed', title: '마음의 소리', author: '박지민', img: '', status: 'locked', quizDone: false },
+        // Month 6
+        { week: 21, type: 'core', title: '행복한 농장', author: '이하늘', img: '', status: 'locked', quizDone: false },
+        { week: 22, type: 'managed', title: '친구의 의미', author: '정우진', img: '', status: 'locked', quizDone: false },
+        { week: 23, type: 'core', title: '꿈을 향해', author: '김도윤', img: '', status: 'locked', quizDone: false },
+        { week: 24, type: 'managed', title: '새로운 시작', author: '박서준', img: '', status: 'locked', quizDone: false },
+    ];
+
+    // ============================================================
+    //  Recommended Books Data
+    // ============================================================
+    const recommendedBooks = [];
+    const bookTitles = [
+        '이상한 나라의 앨리스', '피터팬', '비밀의 화원', '키다리 아저씨', '작은 공주',
+        '보물섬', '로빈슨 크루소', '걸리버 여행기', '어린 왕자', '안네의 일기',
+        '톰 소여의 모험', '허클베리 핀의 모험', '15소년 표류기', '바람의 언덕', '제인 에어',
+        '오만과 편견', '햄릿', '로미오와 줄리엣', '위대한 개츠비', '노인과 바다'
+    ];
+    const authors = ['루이스 캐럴', '제임스 배리', '프랜시스 버넷', '진 웹스터', '마크 트웨인', '로버트 스티븐슨', '다니엘 디포', '조너선 스위프트', '생텍쥐페리', '안네 프랑크'];
+
+    for (let i = 0; i < 226; i++) {
+        recommendedBooks.push({
+            id: i + 1,
+            title: bookTitles[i % bookTitles.length] + (i >= 20 ? ` ${Math.floor(i/20) + 1}` : ''),
+            author: authors[i % authors.length],
+            img: i < 4 ? `../img/book${(i % 4) + 1}.jpg` : '',
+            isAiRecommend: i < 10,
+            isRead: i >= 126  // 마지막 100권 읽음 처리 (127~226)
+        });
+    }
+
+    // ============================================================
+    //  Render Functions
+    // ============================================================
+    function renderLevelTabs() {
+        const container = document.getElementById('level-tabs');
+        let html = '';
+
+        krsLevels.forEach(level => {
+            let classes = 'level-tab';
+            if (level.status === 'current') classes += ' active';
+            else if (level.status === 'adjacent') classes += ' adjacent';
+            else if (level.status === 'completed') classes += ' completed';
+            else if (level.status === 'locked') classes += ' locked';
+
+            const clickHandler = level.status === 'locked' ? '' : `onclick="selectLevel('${level.id}')"`;
+
+            html += `<button class="${classes}" data-level="${level.id}" ${clickHandler}>${level.label}</button>`;
+        });
+
+        container.innerHTML = html;
+
+        // Scroll to current level
+        setTimeout(() => {
+            const activeTab = container.querySelector('.level-tab.active');
+            if (activeTab) {
+                activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }, 100);
+    }
+
+    // Week range state
+    let currentWeekRange = 0; // 0: 1~4, 1: 5~8, 2: 9~12, 3: 13~16, 4: 17~20, 5: 21~24
+    const weekRanges = [
+        { start: 1, end: 4, label: '1~4주차' },
+        { start: 5, end: 8, label: '5~8주차' },
+        { start: 9, end: 12, label: '9~12주차' },
+        { start: 13, end: 16, label: '13~16주차' },
+        { start: 17, end: 20, label: '17~20주차' },
+        { start: 21, end: 24, label: '21~24주차' }
+    ];
+
+    function renderWeekTabs() {
+        const container = document.getElementById('week-tabs');
+        let html = '';
+
+        weekRanges.forEach((range, index) => {
+            // Get books in this range
+            const rangeBooks = curriculumBooks.slice(range.start - 1, range.end);
+            const completedCount = rangeBooks.filter(b => b.status === 'completed').length;
+            const hasInProgress = rangeBooks.some(b => b.status === 'in-progress');
+            const allCompleted = completedCount === 4;
+
+            // 1~4주차(index 0)만 활성, 나머지는 잠금
+            const isLocked = index > 0;
+
+            let classes = 'week-tab';
+            if (isLocked) {
+                classes += ' locked';
+            } else if (index === currentWeekRange) {
+                classes += ' active';
+            } else if (allCompleted) {
+                classes += ' completed';
+            } else if (hasInProgress) {
+                classes += ' has-current';
+            }
+
+            const lockIcon = isLocked ? '<span class="week-tab-lock">🔒</span>' : '';
+            const clickHandler = isLocked ? '' : `onclick="selectWeekRange(${index})"`;
+            const showSpinner = !isLocked && !allCompleted && (hasInProgress || index === currentWeekRange);
+            const spinnerHtml = showSpinner ? '<div class="week-tab-spinner"></div>' : '';
+
+            html += `
+            <div class="${classes}" data-range="${index}" ${clickHandler}>
+                <span class="week-num">${range.label}${lockIcon}</span>
+                ${spinnerHtml}
+            </div>`;
+
+            // Auto-select range with in-progress book
+            if (hasInProgress && currentWeekRange === 0 && index > 0) {
+                currentWeekRange = index;
+            }
+        });
+
+        container.innerHTML = html;
+
+        // Set initial selection to range with in-progress
+        const inProgressIndex = weekRanges.findIndex((range) => {
+            const rangeBooks = curriculumBooks.slice(range.start - 1, range.end);
+            return rangeBooks.some(b => b.status === 'in-progress');
+        });
+        if (inProgressIndex !== -1 && currentWeekRange !== inProgressIndex) {
+            currentWeekRange = inProgressIndex;
+            renderWeekTabs();
+        }
+    }
+
+    function selectWeekRange(index) {
+        // 1~4주차(index 0)만 선택 가능
+        if (index > 0) return;
+        currentWeekRange = index;
+        renderWeekTabs();
+        renderCurriculumBooks();
+    }
+
+    function renderCurriculumBooks() {
+        const container = document.getElementById('curriculum-books');
+        const range = weekRanges[currentWeekRange];
+        const rangeBooks = curriculumBooks.slice(range.start - 1, range.end);
+
+        let html = '';
+        rangeBooks.forEach(book => {
+            html += renderBookCard(book, true);
+        });
+
+        container.innerHTML = html;
+    }
+
+    function renderRecommendedBooks() {
+        const container = document.getElementById('recommended-books');
+        let html = '';
+
+        // Show all recommended books in vertical grid
+        recommendedBooks.forEach(book => {
+            html += renderRecommendedBookCard(book);
+        });
+
+        container.innerHTML = html;
+    }
+
+    function renderBookCard(book, isCurriculum = false) {
+        const cardClasses = `book-card ${book.status === 'locked' ? 'locked' : ''} ${book.status === 'in-progress' ? 'in-progress' : ''}`;
+
+        // Badge
+        let badgeHtml = '';
+        if (book.type === 'core') {
+            badgeHtml = '<span class="book-badge core">코어북</span>';
+        } else if (book.type === 'managed') {
+            badgeHtml = '<span class="book-badge managed">관리이북</span>';
+        }
+
+        // Completed badge
+        if (book.status === 'completed') {
+            badgeHtml += '<span class="book-badge completed"><i class="fa-solid fa-check"></i></span>';
+        }
+
+        // Thumbnail
+        let thumbHtml = '';
+        if (book.img) {
+            thumbHtml = `<img src="${book.img}" alt="${book.title}" onerror="this.parentNode.innerHTML='<div class=\\'book-thumb-placeholder\\'><i class=\\'fa-solid fa-book-open\\'></i><span>KRS</span></div>'">`;
+        } else {
+            thumbHtml = `<div class="book-thumb-placeholder"><i class="fa-solid fa-book-open"></i><span>KRS</span></div>`;
+        }
+
+        // Status overlay
+        let overlayHtml = '';
+        if (book.status === 'locked') {
+            overlayHtml = '<div class="book-status-overlay locked"><i class="fa-solid fa-lock"></i></div>';
+        }
+
+        // Quiz button
+        let quizBtnClasses = 'quiz-btn';
+        let quizIcon = '<i class="fa-solid fa-pen-fancy"></i>';
+        let quizText = '독후퀴즈';
+        if (book.quizDone) {
+            quizBtnClasses += ' completed';
+            quizIcon = '<i class="fa-solid fa-circle-check"></i>';
+            quizText = '완료';
+        } else if (book.status === 'locked') {
+            quizBtnClasses += ' locked';
+            quizIcon = '<i class="fa-solid fa-lock"></i>';
+        }
+
+        const clickHandler = book.status !== 'locked' ? `onclick="openBookFromLibrary('${book.id}', '${book.title}', '${book.author}', ${book.week || 1})" style="cursor:pointer;"` : '';
+
+        return `
+        <div class="${cardClasses}" ${clickHandler}>
+            <div class="book-thumb">
+                ${badgeHtml}
+                ${thumbHtml}
+                ${overlayHtml}
+            </div>
+            <div class="book-info">
+                ${isCurriculum ? `<div class="book-week">${book.week}주차</div>` : ''}
+                <div class="book-title">${book.title}</div>
+                <div class="book-author">${book.author}</div>
+                <button class="${quizBtnClasses}" onclick="event.stopPropagation();">
+                    ${quizIcon}
+                    ${quizText}
+                </button>
+            </div>
+        </div>`;
+    }
+
+    function renderRecommendedBookCard(book) {
+        // Badge
+        let badgeHtml = '';
+        if (book.isAiRecommend) {
+            badgeHtml = '<span class="book-badge ai-recommend"><i class="fa-solid fa-wand-magic-sparkles"></i> AI 추천</span>';
+        }
+
+        // 읽음 배지 (마지막 100권)
+        let readBadgeHtml = '';
+        if (book.isRead) {
+            readBadgeHtml = '<span class="book-badge completed"><i class="fa-solid fa-check"></i></span>';
+        }
+
+        // Thumbnail
+        let thumbHtml = '';
+        if (book.img) {
+            thumbHtml = `<img src="${book.img}" alt="${book.title}" onerror="this.parentNode.innerHTML='<div class=\\'book-thumb-placeholder\\'><i class=\\'fa-solid fa-book-open\\'></i><span>KRS</span></div>'">`;
+        } else {
+            thumbHtml = `<div class="book-thumb-placeholder"><i class="fa-solid fa-book-open"></i><span>KRS</span></div>`;
+        }
+
+        // 퀴즈 버튼 상태
+        const quizBtnClass = book.isRead ? 'quiz-btn completed' : 'quiz-btn';
+        const quizIcon = book.isRead ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-pen-fancy"></i>';
+        const quizText = book.isRead ? '완료' : '독후퀴즈';
+
+        return `
+        <div class="book-card ${book.isRead ? 'read' : ''}" onclick="openBookFromLibrary('${book.id}', '${book.title}', '${book.author}', 0)" style="cursor:pointer;">
+            <div class="book-thumb">
+                ${badgeHtml}
+                ${readBadgeHtml}
+                ${thumbHtml}
+            </div>
+            <div class="book-info">
+                <div class="book-title">${book.title}</div>
+                <div class="book-author">${book.author}</div>
+                <button class="${quizBtnClass}" onclick="event.stopPropagation();">
+                    ${quizIcon}
+                    ${quizText}
+                </button>
+            </div>
+        </div>`;
+    }
+
+    // ============================================================
+    //  Level Selection
+    // ============================================================
+    function selectLevel(levelId) {
+        const level = krsLevels.find(l => l.id === levelId);
+        if (!level || level.status === 'locked') return;
+
+        // Update UI
+        document.querySelectorAll('.level-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.level === levelId) {
+                tab.classList.add('active');
+            }
+        });
+
+        // Update current level badge
+        document.querySelector('.current-level-badge').innerHTML = `
+            <i class="fa-solid fa-star"></i>
+            현재 레벨: ${levelId}
+        `;
+
+        currentLevel = levelId;
+    }
+
+    // ============================================================
+    //  Progress Update
+    // ============================================================
+    function updateProgress() {
+        const completedCount = curriculumBooks.filter(b => b.status === 'completed').length;
+        const totalCount = curriculumBooks.length;
+        const percentage = (completedCount / totalCount) * 100;
+
+        document.getElementById('progress-fill').style.width = `${percentage}%`;
+        document.getElementById('progress-text').textContent = `${completedCount}/${totalCount}권 완료`;
+    }
+
+    // ============================================================
+    //  도서 클릭 시 뷰어 열기
+    // ============================================================
+    function openBookFromLibrary(bookId, bookTitle, bookAuthor, week) {
+        const bookData = {
+            id: bookId,
+            title: bookTitle,
+            author: bookAuthor,
+            week: week,
+            level: currentLevel,
+            source: 'library',
+            timestamp: new Date().toISOString()
+        };
+
+        // sessionStorage에 저장
+        sessionStorage.setItem('currentBook', JSON.stringify(bookData));
+        sessionStorage.setItem('referrer', 'library.html');
+
+        console.log('[Library] Opening book:', bookData);
+
+        // 독서 뷰어로 이동 (깔끔한 버전)
+        window.location.href = 'book-viewer-clean.html';
+    }
+
+    // ============================================================
+    //  Initialize
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSidebar('library');
+        loadLogoutModal();
+        renderLevelTabs();
+        renderWeekTabs();
+        renderCurriculumBooks();
+        renderRecommendedBooks();
+        updateProgress();
+    });
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

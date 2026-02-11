@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>슈퍼팟</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-primary': '#FF9F43',
+                        'brand-dark': '#E8890C',
+                        'brand-bg': '#FFF8F0',
+                        'superpot-primary': '#A855F7',
+                        'superpot-dark': '#9333EA'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        /* 전체 레이아웃 */
+        .app-container {
+            min-height: 100vh;
+            background: #faf5ff;
+        }
+
+        /* 상단 헤더 */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .app-logo-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        .app-logo-btn:hover {
+            background: #faf5ff;
+        }
+
+        .app-logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #A855F7, #EC4899);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(168,85,247,0.3);
+        }
+
+        .app-logo-text {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            color: #9333EA;
+        }
+
+        .app-logo-arrow {
+            color: #9ca3af;
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        .app-logo-arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        /* 드롭다운 메뉴 */
+        .app-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 12px;
+            width: 280px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            padding: 8px;
+            display: none;
+            z-index: 200;
+            margin-top: 8px;
+        }
+        .app-dropdown.show {
+            display: block;
+            animation: dropdownIn 0.2s ease-out;
+        }
+        @keyframes dropdownIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .app-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        .app-dropdown-item:hover {
+            background: #f3f4f6;
+        }
+        .app-dropdown-item.active {
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+        }
+
+        .app-dropdown-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .app-dropdown-info {
+            flex: 1;
+        }
+        .app-dropdown-name {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .app-dropdown-desc {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .app-dropdown-check {
+            color: #A855F7;
+            font-size: 14px;
+        }
+
+        /* 콘텐츠 영역 */
+        .app-content {
+            padding-top: 56px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-image-container {
+            width: 100%;
+            max-width: 1400px;
+            padding: 20px;
+        }
+
+        .app-image {
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        }
+
+        /* 드롭다운 오버레이 */
+        .dropdown-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+        }
+        .dropdown-overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="font-noto">
+    <div class="app-container">
+        <!-- 상단 헤더 -->
+        <header class="app-header">
+            <button class="app-logo-btn" onclick="toggleDropdown()">
+                <div class="app-logo-icon">🎮</div>
+                <span class="app-logo-text">슈퍼팟</span>
+                <i class="fa-solid fa-chevron-down app-logo-arrow" id="logo-arrow"></i>
+            </button>
+
+            <!-- 드롭다운 메뉴 -->
+            <div class="app-dropdown" id="app-dropdown">
+                <!-- 웅진북클럽 KRS -->
+                <button class="app-dropdown-item" onclick="goToApp('bookclub-krs')">
+                    <div class="app-dropdown-icon" style="background: linear-gradient(135deg, #FF9F43, #E8890C);">📖</div>
+                    <div class="app-dropdown-info">
+                        <p class="app-dropdown-name">웅진북클럽 KRS</p>
+                        <p class="app-dropdown-desc">AI 독서 프로그램</p>
+                    </div>
+                </button>
+                <!-- 웅진북클럽 -->
+                <button class="app-dropdown-item" onclick="goToApp('bookclub')">
+                    <div class="app-dropdown-icon" style="background: linear-gradient(135deg, #FF9F43, #F97316);">📚</div>
+                    <div class="app-dropdown-info">
+                        <p class="app-dropdown-name">웅진북클럽</p>
+                        <p class="app-dropdown-desc">독서 · 학습</p>
+                    </div>
+                </button>
+                <!-- 북클럽 B2C -->
+                <button class="app-dropdown-item" onclick="goToApp('bookclub-b2c')">
+                    <div class="app-dropdown-icon" style="background: linear-gradient(135deg, #FB923C, #FBBF24);">📕</div>
+                    <div class="app-dropdown-info">
+                        <p class="app-dropdown-name">북클럽 B2C</p>
+                        <p class="app-dropdown-desc">개인 독서</p>
+                    </div>
+                </button>
+                <!-- 스마트씽크빅 -->
+                <button class="app-dropdown-item" onclick="goToApp('smart-thinkbig')">
+                    <div class="app-dropdown-icon" style="background: linear-gradient(135deg, #06B6D4, #0891B2);">🧠</div>
+                    <div class="app-dropdown-info">
+                        <p class="app-dropdown-name">스마트씽크빅</p>
+                        <p class="app-dropdown-desc">사고력 · 창의력</p>
+                    </div>
+                </button>
+                <!-- 스마트올 -->
+                <button class="app-dropdown-item" onclick="goToApp('smartall')">
+                    <div class="app-dropdown-icon" style="background: linear-gradient(135deg, #3B82F6, #6366F1);">🎓</div>
+                    <div class="app-dropdown-info">
+                        <p class="app-dropdown-name">스마트올</p>
+                        <p class="app-dropdown-desc">전과목 학습</p>
+                    </div>
+                </button>
+                <!-- 슈퍼팟 (현재) -->
+                <button class="app-dropdown-item active" onclick="goToApp('superpot')">
+                    <div class="app-dropdown-icon" style="background: linear-gradient(135deg, #A855F7, #EC4899);">🎮</div>
+                    <div class="app-dropdown-info">
+                        <p class="app-dropdown-name">슈퍼팟</p>
+                        <p class="app-dropdown-desc">게임 · 활동</p>
+                    </div>
+                    <i class="fa-solid fa-check app-dropdown-check"></i>
+                </button>
+                <!-- 링고시티 -->
+                <button class="app-dropdown-item" onclick="goToApp('lingocity')">
+                    <div class="app-dropdown-icon" style="background: linear-gradient(135deg, #10B981, #14B8A6);">🌍</div>
+                    <div class="app-dropdown-info">
+                        <p class="app-dropdown-name">링고시티</p>
+                        <p class="app-dropdown-desc">영어 학습</p>
+                    </div>
+                </button>
+            </div>
+        </header>
+
+        <!-- 드롭다운 오버레이 -->
+        <div class="dropdown-overlay" id="dropdown-overlay" onclick="closeDropdown()"></div>
+
+        <!-- 콘텐츠 -->
+        <main class="app-content">
+            <div class="app-image-container">
+                <img src="../img/eng.jpg" alt="슈퍼팟" class="app-image">
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let isDropdownOpen = false;
+
+        function toggleDropdown() {
+            isDropdownOpen = !isDropdownOpen;
+            const dropdown = document.getElementById('app-dropdown');
+            const overlay = document.getElementById('dropdown-overlay');
+            const arrow = document.getElementById('logo-arrow');
+
+            if (isDropdownOpen) {
+                dropdown.classList.add('show');
+                overlay.classList.add('show');
+                arrow.classList.add('rotate');
+            } else {
+                dropdown.classList.remove('show');
+                overlay.classList.remove('show');
+                arrow.classList.remove('rotate');
+            }
+        }
+
+        function closeDropdown() {
+            isDropdownOpen = false;
+            document.getElementById('app-dropdown').classList.remove('show');
+            document.getElementById('dropdown-overlay').classList.remove('show');
+            document.getElementById('logo-arrow').classList.remove('rotate');
+        }
+
+        function goToApp(appId) {
+            sessionStorage.setItem('selectedApp', appId);
+
+            const appPages = {
+                'bookclub-krs': 'home.html',
+                'bookclub': 'home2.html',
+                'bookclub-b2c': 'home.html',
+                'smart-thinkbig': 'smart-thinkbig.html',
+                'smartall': 'smartall.html',
+                'superpot': 'superpot.html',
+                'lingocity': 'lingocity.html'
+            };
+
+            window.location.href = appPages[appId] || 'home.html';
+        }
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

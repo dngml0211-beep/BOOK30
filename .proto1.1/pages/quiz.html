@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 독후퀴즈</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1',
+                            cream: '#FFFBEB', peach: '#FFF7ED', mint: '#ECFDF5'
+                        },
+                        duo: {
+                            green: '#58CC02',
+                            greenDark: '#46A302',
+                            blue: '#1CB0F6',
+                            purple: '#CE82FF',
+                            red: '#FF4B4B',
+                            orange: '#FF9600',
+                            yellow: '#FFC800'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        body {
+            background: #f7f7f7;
+        }
+
+        /* 3D 버튼 스타일 */
+        .btn-3d {
+            position: relative;
+            transform: translateY(-4px);
+            transition: all 0.1s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(0);
+        }
+        .btn-3d-green {
+            background: linear-gradient(180deg, #58CC02 0%, #58CC02 100%);
+            box-shadow: 0 8px 0 #46A302, 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .btn-3d-green:active {
+            box-shadow: 0 2px 0 #46A302, 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 선택지 카드 */
+        .option-card {
+            background: white;
+            border: 3px solid #e5e5e5;
+            box-shadow: 0 4px 0 #d1d1d1;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .option-card:hover {
+            border-color: #1CB0F6;
+            transform: translateY(-2px);
+        }
+        .option-card:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 #d1d1d1;
+        }
+        .option-card.selected {
+            border-color: #1CB0F6;
+            background: #DDF4FF;
+            box-shadow: 0 4px 0 #1CB0F6;
+        }
+        .option-card.correct {
+            border-color: #58CC02;
+            background: #D7FFB8;
+            box-shadow: 0 4px 0 #58CC02;
+        }
+        .option-card.wrong {
+            border-color: #FF4B4B;
+            background: #FFDFE0;
+            box-shadow: 0 4px 0 #FF4B4B;
+        }
+
+        /* OX 버튼 */
+        .ox-btn {
+            width: 140px;
+            height: 140px;
+            border-radius: 24px;
+            font-size: 4rem;
+            font-weight: bold;
+            border: 4px solid;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .ox-btn:active {
+            transform: scale(0.95);
+        }
+        .ox-btn.o-btn {
+            background: linear-gradient(180deg, #58CC02 0%, #4CAF00 100%);
+            border-color: #46A302;
+            box-shadow: 0 8px 0 #3D8C00;
+            color: white;
+        }
+        .ox-btn.x-btn {
+            background: linear-gradient(180deg, #FF4B4B 0%, #E53935 100%);
+            border-color: #D32F2F;
+            box-shadow: 0 8px 0 #B71C1C;
+            color: white;
+        }
+        .ox-btn.selected {
+            transform: scale(1.1);
+        }
+
+        /* 프로그레스 바 */
+        .progress-track {
+            height: 16px;
+            background: #e5e5e5;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #58CC02 0%, #78D82D 100%);
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+
+        /* 피드백 애니메이션 */
+        .feedback-popup {
+            animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .shake {
+            animation: shake 0.5s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .bounce-in {
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* 캐릭터 */
+        .mascot {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 하트 */
+        .heart {
+            color: #FF4B4B;
+            text-shadow: 0 2px 4px rgba(255, 75, 75, 0.3);
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 min-h-screen overflow-x-hidden">
+    <!-- 상단 헤더 -->
+    <header class="sticky top-0 z-50 bg-white border-b-2 border-gray-100 px-6 py-3">
+        <div class="max-w-2xl mx-auto flex items-center gap-4">
+            <!-- 닫기 버튼 -->
+            <button onclick="exitQuiz()" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark text-2xl"></i>
+            </button>
+
+            <!-- 프로그레스 바 -->
+            <div class="flex-1 progress-track">
+                <div id="quiz-progress" class="progress-fill" style="width: 0%"></div>
+            </div>
+
+            <!-- 하트 (목숨) -->
+            <div class="flex items-center gap-1">
+                <span class="heart text-2xl" id="heart-1"><i class="fa-solid fa-heart"></i></span>
+                <span class="heart text-2xl" id="heart-2"><i class="fa-solid fa-heart"></i></span>
+                <span class="heart text-2xl" id="heart-3"><i class="fa-solid fa-heart"></i></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 퀴즈 영역 -->
+    <main class="max-w-2xl mx-auto px-6 py-8" id="quiz-container">
+        <!-- 퀴즈가 여기에 동적으로 로드됨 -->
+    </main>
+
+    <!-- 하단 체크 버튼 -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-100 p-4">
+        <div class="max-w-2xl mx-auto">
+            <button id="check-btn" onclick="checkAnswer()" disabled class="btn-3d btn-3d-green w-full py-4 text-white font-noto text-xl rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none disabled:bg-gray-300">
+                확인하기
+            </button>
+        </div>
+    </footer>
+
+    <!-- 정답 피드백 팝업 -->
+    <div id="feedback-correct" class="hidden fixed inset-0 z-[100] flex items-end justify-center pb-32 pointer-events-none">
+        <div class="feedback-popup bg-duo-green text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                <span class="text-4xl">🎉</span>
+            </div>
+            <div>
+                <p class="font-noto text-2xl">정답이에요!</p>
+                <p class="text-white/80">잘했어요!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 오답 피드백 팝업 -->
+    <div id="feedback-wrong" class="hidden fixed inset-0 z-[100] flex items-end justify-center pb-32 pointer-events-none">
+        <div class="feedback-popup bg-duo-red text-white px-8 py-5 rounded-2xl shadow-2xl flex items-center gap-4">
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                <span class="text-4xl">😢</span>
+            </div>
+            <div>
+                <p class="font-noto text-2xl">아쉬워요!</p>
+                <p class="text-white/80" id="correct-answer-hint">다시 한번 생각해봐요</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 퀴즈 완료 화면 -->
+    <div id="quiz-complete" class="hidden fixed inset-0 z-[200] bg-gradient-to-br from-duo-green via-emerald-500 to-teal-500 flex items-center justify-center">
+        <div class="text-center px-6">
+            <!-- 성공 배지 -->
+            <div class="bounce-in w-40 h-40 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-2xl">
+                <span class="text-7xl">🏆</span>
+            </div>
+
+            <h2 class="font-noto text-4xl text-white mb-2">퀴즈 완료!</h2>
+            <p class="text-white/90 text-xl mb-8">모든 문제를 풀었어요!</p>
+
+            <!-- 결과 카드 -->
+            <div class="bg-white rounded-3xl p-6 max-w-sm mx-auto shadow-2xl mb-6">
+                <div class="flex items-center justify-around mb-4">
+                    <div class="text-center">
+                        <p class="text-gray-400 text-sm">정답률</p>
+                        <p id="result-accuracy" class="font-noto text-3xl text-duo-green">100%</p>
+                    </div>
+                    <div class="w-px h-12 bg-gray-200"></div>
+                    <div class="text-center">
+                        <p class="text-gray-400 text-sm">획득 별</p>
+                        <p id="result-stars" class="font-noto text-3xl text-duo-orange">+30⭐</p>
+                    </div>
+                </div>
+
+                <!-- 다음 단계 안내 -->
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4 mb-4">
+                    <p class="text-sm text-gray-600 mb-2">다음 단계</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center text-2xl text-white shadow-md">🎮</div>
+                        <div class="text-left">
+                            <p class="font-noto text-lg text-gray-800">어휘 챌린지</p>
+                            <p class="text-xs text-gray-500">재미있는 단어 게임!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="goToVocabChallenge()" class="btn-3d btn-3d-green w-full py-4 text-white font-noto text-xl rounded-2xl">
+                    어휘 챌린지 시작!
+                </button>
+            </div>
+
+            <button onclick="skipToHome()" class="text-white/70 hover:text-white text-sm underline">
+                나중에 할게요
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 퀴즈 데이터 (책별로 다른 문제 세트)
+        const quizData = {
+            '마법사의 물약': [
+                {
+                    type: 'ox',
+                    question: '마법사는 숲속으로 물약 재료를 찾아 떠났다.',
+                    answer: true,
+                    explanation: '맞아요! 마법사는 깊은 숲속으로 물약 재료를 찾아 떠났어요.'
+                },
+                {
+                    type: 'multiple',
+                    question: '마법사가 물약을 만들기 위해 필요한 것은?',
+                    options: ['파란 꽃잎', '빨간 열매', '노란 버섯', '검은 돌'],
+                    answer: 0,
+                    explanation: '파란 꽃잎이 필요했어요!'
+                },
+                {
+                    type: 'multiple',
+                    question: '마법사의 물약은 어떤 색이었을까요?',
+                    options: ['무지개빛', '검은색', '투명', '하얀색'],
+                    answer: 0,
+                    explanation: '신비로운 무지개빛이었어요!'
+                }
+            ],
+            'default': [
+                {
+                    type: 'ox',
+                    question: '이 책의 주인공은 용감한 모험가였다.',
+                    answer: true,
+                    explanation: '맞아요!'
+                },
+                {
+                    type: 'multiple',
+                    question: '이야기에서 가장 중요한 것은?',
+                    options: ['용기', '돈', '힘', '속도'],
+                    answer: 0,
+                    explanation: '용기가 가장 중요했어요!'
+                }
+            ]
+        };
+
+        let currentQuiz = [];
+        let currentQuestionIndex = 0;
+        let selectedAnswer = null;
+        let hearts = 3;
+        let correctCount = 0;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            initQuiz();
+        });
+
+        function initQuiz() {
+            const bookData = sessionStorage.getItem('currentBook');
+            let bookTitle = '마법사의 물약';
+
+            if (bookData) {
+                const book = JSON.parse(bookData);
+                bookTitle = book.title || '마법사의 물약';
+            }
+
+            // 해당 책의 퀴즈 또는 기본 퀴즈 로드
+            currentQuiz = quizData[bookTitle] || quizData['default'];
+            currentQuestionIndex = 0;
+            selectedAnswer = null;
+            hearts = 3;
+            correctCount = 0;
+
+            renderQuestion();
+            updateProgress();
+        }
+
+        function renderQuestion() {
+            const container = document.getElementById('quiz-container');
+            const question = currentQuiz[currentQuestionIndex];
+
+            if (question.type === 'ox') {
+                container.innerHTML = renderOXQuestion(question);
+            } else {
+                container.innerHTML = renderMultipleQuestion(question);
+            }
+
+            // 버튼 초기화
+            document.getElementById('check-btn').disabled = true;
+            selectedAnswer = null;
+        }
+
+        function renderOXQuestion(question) {
+            return `
+                <div class="slide-up">
+                    <!-- 캐릭터 -->
+                    <div class="text-center mb-6">
+                        <div class="mascot inline-block text-6xl">🐿️</div>
+                    </div>
+
+                    <!-- 문제 -->
+                    <div class="bg-white rounded-3xl p-6 mb-8 shadow-lg border-2 border-gray-100">
+                        <p class="text-center text-gray-400 text-sm mb-2">OX 퀴즈</p>
+                        <p class="font-noto text-2xl text-center text-gray-800 leading-relaxed">${question.question}</p>
+                    </div>
+
+                    <!-- OX 버튼 -->
+                    <div class="flex justify-center gap-8">
+                        <button onclick="selectOX(true)" class="ox-btn o-btn" id="btn-o">O</button>
+                        <button onclick="selectOX(false)" class="ox-btn x-btn" id="btn-x">X</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMultipleQuestion(question) {
+            let optionsHtml = question.options.map((opt, i) => `
+                <button onclick="selectOption(${i})" class="option-card w-full p-5 rounded-2xl text-left flex items-center gap-4" id="option-${i}">
+                    <div class="w-10 h-10 rounded-full border-3 border-current flex items-center justify-center font-bold text-lg">
+                        ${String.fromCharCode(65 + i)}
+                    </div>
+                    <span class="font-medium text-lg">${opt}</span>
+                </button>
+            `).join('');
+
+            return `
+                <div class="slide-up">
+                    <!-- 캐릭터 -->
+                    <div class="text-center mb-6">
+                        <div class="mascot inline-block text-6xl">🐿️</div>
+                    </div>
+
+                    <!-- 문제 -->
+                    <div class="bg-white rounded-3xl p-6 mb-8 shadow-lg border-2 border-gray-100">
+                        <p class="text-center text-gray-400 text-sm mb-2">객관식 퀴즈</p>
+                        <p class="font-noto text-2xl text-center text-gray-800 leading-relaxed">${question.question}</p>
+                    </div>
+
+                    <!-- 선택지 -->
+                    <div class="space-y-3">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectOX(value) {
+            selectedAnswer = value;
+
+            // 버튼 상태 업데이트
+            document.getElementById('btn-o').classList.remove('selected');
+            document.getElementById('btn-x').classList.remove('selected');
+
+            if (value) {
+                document.getElementById('btn-o').classList.add('selected');
+            } else {
+                document.getElementById('btn-x').classList.add('selected');
+            }
+
+            document.getElementById('check-btn').disabled = false;
+        }
+
+        function selectOption(index) {
+            selectedAnswer = index;
+
+            // 모든 옵션 선택 해제
+            document.querySelectorAll('.option-card').forEach((card, i) => {
+                card.classList.remove('selected');
+            });
+
+            // 선택한 옵션 강조
+            document.getElementById(`option-${index}`).classList.add('selected');
+            document.getElementById('check-btn').disabled = false;
+        }
+
+        function checkAnswer() {
+            const question = currentQuiz[currentQuestionIndex];
+            const isCorrect = question.type === 'ox'
+                ? selectedAnswer === question.answer
+                : selectedAnswer === question.answer;
+
+            if (isCorrect) {
+                showCorrectFeedback();
+                correctCount++;
+            } else {
+                showWrongFeedback(question);
+                loseHeart();
+            }
+
+            // 문항 완료 후 프로그래스바 업데이트
+            updateProgressAfterAnswer();
+
+            // 버튼 텍스트 변경
+            const checkBtn = document.getElementById('check-btn');
+            checkBtn.textContent = '다음';
+            checkBtn.onclick = nextQuestion;
+        }
+
+        function showCorrectFeedback() {
+            const feedback = document.getElementById('feedback-correct');
+            feedback.classList.remove('hidden');
+
+            // 선택지 정답 표시
+            if (currentQuiz[currentQuestionIndex].type === 'ox') {
+                const correctBtn = selectedAnswer ? 'btn-o' : 'btn-x';
+                document.getElementById(correctBtn).style.transform = 'scale(1.2)';
+            } else {
+                document.getElementById(`option-${selectedAnswer}`).classList.add('correct');
+            }
+
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+            }, 1500);
+        }
+
+        function showWrongFeedback(question) {
+            const feedback = document.getElementById('feedback-wrong');
+            document.getElementById('correct-answer-hint').textContent = question.explanation;
+            feedback.classList.remove('hidden');
+
+            // 선택지 오답 표시
+            if (question.type === 'ox') {
+                const wrongBtn = selectedAnswer ? 'btn-o' : 'btn-x';
+                document.getElementById(wrongBtn).classList.add('shake');
+            } else {
+                document.getElementById(`option-${selectedAnswer}`).classList.add('wrong');
+                document.getElementById(`option-${question.answer}`).classList.add('correct');
+            }
+
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+            }, 2000);
+        }
+
+        function loseHeart() {
+            if (hearts > 0) {
+                hearts--;
+                const heartEl = document.getElementById(`heart-${hearts + 1}`);
+                heartEl.innerHTML = '<i class="fa-regular fa-heart text-gray-300"></i>';
+                heartEl.classList.add('shake');
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex >= currentQuiz.length) {
+                showQuizComplete();
+            } else {
+                renderQuestion();
+                updateProgress();
+
+                // 버튼 초기화
+                const checkBtn = document.getElementById('check-btn');
+                checkBtn.textContent = '확인하기';
+                checkBtn.onclick = checkAnswer;
+                checkBtn.disabled = true;
+            }
+        }
+
+        function updateProgress() {
+            // 완료된 문항 수 기준으로 프로그래스바 채우기
+            const completedCount = currentQuestionIndex;
+            const progress = (completedCount / currentQuiz.length) * 100;
+            document.getElementById('quiz-progress').style.width = progress + '%';
+        }
+
+        // 문항 완료 후 프로그래스바 업데이트
+        function updateProgressAfterAnswer() {
+            const completedCount = currentQuestionIndex + 1; // 현재 문항까지 완료
+            const progress = (completedCount / currentQuiz.length) * 100;
+            document.getElementById('quiz-progress').style.width = progress + '%';
+        }
+
+        function showQuizComplete() {
+            const accuracy = Math.round((correctCount / currentQuiz.length) * 100);
+            const stars = correctCount * 10;
+
+            document.getElementById('result-accuracy').textContent = accuracy + '%';
+            document.getElementById('result-stars').textContent = '+' + stars + '⭐';
+
+            document.getElementById('quiz-complete').classList.remove('hidden');
+
+            // 학습 진행 상태 저장 (주차별+책타입별 키 사용)
+            const bookData = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+            const week = bookData.week || 1;
+            const bookType = bookData.bookType || 'core';
+            const isReReadingMode = sessionStorage.getItem('isReReadingMode') === 'true' || bookData.isReReading;
+
+            // 다시 읽기 모드에서는 실제 진행상태를 업데이트하지 않음
+            if (!isReReadingMode) {
+                const progressKey = 'learningProgress_w' + week + '_' + bookType;
+                const progressData = JSON.parse(sessionStorage.getItem(progressKey) || '{}');
+                progressData.quizCompleted = true;
+                progressData.quizScore = accuracy;
+                sessionStorage.setItem(progressKey, JSON.stringify(progressData));
+
+                // 교과서 짝꿍책 퀴즈 완료 시 별상자 트리거 플래그 설정 (하위 호환)
+                if (bookType === 'textbook') {
+                    sessionStorage.setItem('textbookQuizJustCompleted', 'true');
+                    sessionStorage.setItem('textbookQuizCompletedWeek', week.toString());
+                }
+
+                // 기존 호환용 키에도 저장
+                const legacyProgress = JSON.parse(sessionStorage.getItem('learningProgress') || '{}');
+                legacyProgress.quizCompleted = true;
+                legacyProgress.quizScore = accuracy;
+                sessionStorage.setItem('learningProgress', JSON.stringify(legacyProgress));
+            }
+
+            // 퀴즈 완료 플래그 설정 (홈에서 확인용 - 다시 읽기 모드에서도 필요)
+            sessionStorage.setItem('quizJustCompleted', 'true');
+            sessionStorage.setItem('quizCompletedWeek', week.toString());
+            sessionStorage.setItem('quizCompletedBookType', bookType);
+        }
+
+        function goToVocabChallenge() {
+            window.location.href = 'vocabulary-challenge.html';
+        }
+
+        function skipToHome() {
+            window.location.href = 'home.html';
+        }
+
+        function exitQuiz() {
+            // 바로 홈 화면으로 이동
+            window.location.href = 'home.html';
+        }
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

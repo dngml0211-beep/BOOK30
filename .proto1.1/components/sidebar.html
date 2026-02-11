@@ -1,0 +1,183 @@
+﻿<!-- 북클럽 3.0 - 사이드바 컴포넌트 -->
+<aside class="sidebar" id="main-sidebar">
+    <!-- 로고 (드롭다운 트리거) -->
+    <div class="px-3 pt-3 pb-3 relative z-20">
+        <button onclick="toggleAppMenu()" class="flex items-center gap-2 group" id="logo-btn">
+            <h1 class="font-noto text-[19px] font-bold text-brand-primary tracking-tight">
+                웅진북클럽 <span class="text-gray-400 text-[11px] font-bold" id="logo-krs-label">KRS</span>
+            </h1>
+            <i class="fa-solid fa-chevron-down text-gray-400 text-sm transition-transform duration-300" id="logo-arrow"></i>
+        </button>
+    </div>
+
+    <!-- 앱 선택 메뉴 (드롭다운 - 오버레이) -->
+    <div id="app-menu" class="hidden absolute left-0 right-0 top-[42px] bottom-[50px] z-10 px-2 py-2 bg-white/95 backdrop-blur-sm animate-fadeIn overflow-y-auto">
+        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-1.5 space-y-0.5">
+            <!-- 웅진북클럽 KRS -->
+            <button onclick="selectApp('bookclub-krs')" class="app-item active w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all">
+                <div class="w-9 h-9 bg-gradient-to-br from-brand-primary to-brand-dark rounded-xl flex items-center justify-center text-white text-base shadow-md">
+                    📖
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-noto text-sm text-gray-800 truncate">웅진북클럽 KRS</p>
+                    <p class="text-[10px] text-gray-400">AI 독서 프로그램</p>
+                </div>
+                <i class="fa-solid fa-check text-brand-primary text-sm" id="check-bookclub-krs"></i>
+            </button>
+            <!-- 웅진북클럽 -->
+            <button onclick="selectApp('bookclub')" class="app-item w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all hover:bg-white">
+                <div class="w-9 h-9 bg-gradient-to-br from-brand-primary to-orange-500 rounded-xl flex items-center justify-center text-white text-base shadow-md">
+                    📚
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-noto text-sm text-gray-800 truncate">웅진북클럽</p>
+                    <p class="text-[10px] text-gray-400">독서 · 학습</p>
+                </div>
+                <i class="fa-solid fa-check text-brand-primary text-sm hidden" id="check-bookclub"></i>
+            </button>
+            <!-- 북클럽 B2C -->
+            <button onclick="selectApp('bookclub-b2c')" class="app-item w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all hover:bg-white">
+                <div class="w-9 h-9 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-xl flex items-center justify-center text-white text-base shadow-md">
+                    📕
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-noto text-sm text-gray-800 truncate">북클럽 B2C</p>
+                    <p class="text-[10px] text-gray-400">개인 독서</p>
+                </div>
+                <i class="fa-solid fa-check text-brand-primary text-sm hidden" id="check-bookclub-b2c"></i>
+            </button>
+            <!-- 스마트씽크빅 -->
+            <button onclick="selectApp('smart-thinkbig')" class="app-item w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all hover:bg-white">
+                <div class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center text-white text-base shadow-md">
+                    🧠
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-noto text-sm text-gray-800 truncate">스마트씽크빅</p>
+                    <p class="text-[10px] text-gray-400">사고력 · 창의력</p>
+                </div>
+                <i class="fa-solid fa-check text-brand-primary text-sm hidden" id="check-smart-thinkbig"></i>
+            </button>
+            <!-- 스마트올 -->
+            <button onclick="selectApp('smartall')" class="app-item w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all hover:bg-white">
+                <div class="w-9 h-9 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center text-white text-base shadow-md">
+                    🎓
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-noto text-sm text-gray-800 truncate">스마트올</p>
+                    <p class="text-[10px] text-gray-400">전과목 학습</p>
+                </div>
+                <i class="fa-solid fa-check text-brand-primary text-sm hidden" id="check-smartall"></i>
+            </button>
+            <!-- 슈퍼팟 -->
+            <button onclick="selectApp('superpot')" class="app-item w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all hover:bg-white">
+                <div class="w-9 h-9 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center text-white text-base shadow-md">
+                    🎮
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-noto text-sm text-gray-800 truncate">슈퍼팟</p>
+                    <p class="text-[10px] text-gray-400">게임 · 활동</p>
+                </div>
+                <i class="fa-solid fa-check text-brand-primary text-sm hidden" id="check-superpot"></i>
+            </button>
+            <!-- 링고시티 -->
+            <button onclick="selectApp('lingocity')" class="app-item w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-all hover:bg-white">
+                <div class="w-9 h-9 bg-gradient-to-br from-green-400 to-teal-500 rounded-xl flex items-center justify-center text-white text-base shadow-md">
+                    🌍
+                </div>
+                <div class="text-left flex-1 min-w-0">
+                    <p class="font-noto text-sm text-gray-800 truncate">링고시티</p>
+                    <p class="text-[10px] text-gray-400">영어 학습</p>
+                </div>
+                <i class="fa-solid fa-check text-brand-primary text-sm hidden" id="check-lingocity"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 프로필 카드 -->
+    <div id="profile-section" class="mx-3 mb-4 p-3 bg-gradient-to-br from-brand-bg to-yellow-200 rounded-2xl flex items-center gap-3 shadow-sm transition-all duration-300">
+        <div class="relative">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-300 to-brand-primary flex items-center justify-center text-2xl border-2 border-white shadow-md">
+                🔥
+            </div>
+            <div class="absolute -bottom-1 -right-1 bg-gradient-to-r from-brand-primary to-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
+                K2-1
+            </div>
+        </div>
+        <div>
+            <p class="font-noto text-[13px] text-gray-800" data-user-name>우희</p>
+            <p class="text-xs text-gray-500">독서 탐험가</p>
+        </div>
+    </div>
+
+    <!-- 네비게이션 -->
+    <nav id="nav-section" class="flex-1 px-2 space-y-1 overflow-y-auto hide-scrollbar transition-all duration-300">
+        <!-- 메인 메뉴 -->
+        <a href="home.html" data-page="home" id="nav-home-link" class="nav-link flex items-center gap-3 px-3 py-3 rounded-2xl transition-all">
+            <i class="fa-solid fa-house text-xl w-6 text-center"></i>
+            <span class="font-noto text-lg tracking-wide">홈</span>
+        </a>
+        <a href="library.html" data-page="library" data-krs-only data-b2c-show class="nav-link flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors">
+            <i class="fa-solid fa-book-open text-xl w-6 text-center"></i>
+            <span class="font-noto text-lg tracking-wide">KRS 도서관</span>
+        </a>
+        <a href="book-library.html" data-page="book-library" data-b2c-hide class="nav-link flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors">
+            <i class="fa-solid fa-layer-group text-xl w-6 text-center"></i>
+            <span class="font-noto text-lg tracking-wide">라이브러리</span>
+        </a>
+        <a href="mypage.html" data-page="mypage" class="nav-link flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors">
+            <i class="fa-solid fa-user text-xl w-6 text-center"></i>
+            <span class="font-noto text-lg tracking-wide">마이페이지</span>
+        </a>
+        <a href="starshop.html" data-page="starshop" class="nav-link flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors">
+            <i class="fa-solid fa-star text-xl w-6 text-center"></i>
+            <span class="font-noto text-lg tracking-wide">스타샵</span>
+        </a>
+
+        <!-- KRS/B2C 전용: AI 독서도구함 -->
+        <div data-krs-only data-b2c-show>
+            <div class="pt-4 pb-2 px-2"></div>
+            <a href="ai-buddy.html" data-page="ai-buddy" class="nav-link flex items-center gap-3 px-3 py-3 rounded-2xl transition-all hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 group" style="text-decoration:none;">
+                <span class="text-xl w-6 text-center">🧰</span>
+                <span class="font-noto text-lg tracking-wide group-hover:text-purple-600 transition-colors">AI 독서도구함</span>
+            </a>
+        </div>
+
+        <!-- KRS/B2C 전용: 오늘의 도전 -->
+        <div data-krs-only data-b2c-show>
+            <a href="all-challenge.html" data-page="all-challenge" class="nav-link flex items-center gap-3 px-3 py-3 rounded-2xl transition-all hover:bg-gradient-to-r hover:from-violet-50 hover:to-purple-50 group" style="text-decoration:none;">
+                <span class="text-xl w-6 text-center">♥️</span>
+                <span class="font-noto text-lg tracking-wide group-hover:text-purple-600 transition-colors">오늘의 도전</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 푸터 (z-20으로 앱 메뉴 위에 표시) -->
+    <div class="p-4 pt-0 relative z-20 bg-white">
+        <div class="flex items-center justify-between text-gray-400 mb-2 px-1">
+            <button onclick="window.location.href='settings.html'" class="hover:text-brand-primary text-sm font-medium">
+                <i class="fa-solid fa-gear mr-2"></i>설정
+            </button>
+            <button data-logout class="hover:text-red-400 text-sm font-medium">
+                <i class="fa-solid fa-right-from-bracket mr-2"></i>로그아웃
+            </button>
+        </div>
+    </div>
+</aside>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.2s ease-out;
+    }
+    .app-item.active {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    #logo-arrow.rotate {
+        transform: rotate(180deg);
+    }
+</style>
+

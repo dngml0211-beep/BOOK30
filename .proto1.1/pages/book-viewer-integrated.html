@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 통합 뷰어</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1',
+                            cream: '#FFFBEB', peach: '#FFF7ED', mint: '#ECFDF5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Common JS -->
+    <script src="../js/common.js"></script>
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+        body { background: linear-gradient(180deg, #FFF7ED 0%, #FEF3C7 50%, #ECFDF5 100%); }
+
+        /* 뷰어 탭 스타일 - 컴팩트 버전 */
+        .viewer-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 6px 12px;
+            background: #fafafa;
+            border-bottom: 1px solid #e5e7eb;
+            overflow-x: auto;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .viewer-tabs::-webkit-scrollbar { display: none; }
+
+        .viewer-tab {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .viewer-tab:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+        .viewer-tab.active {
+            background: linear-gradient(135deg, #FF9F43 0%, #f97316 100%);
+            color: white;
+            border-color: #FF9F43;
+            box-shadow: 0 2px 6px rgba(255, 159, 67, 0.25);
+        }
+        .viewer-tab .tab-icon {
+            font-size: 13px;
+        }
+        .viewer-tab .tab-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 1px 5px;
+            border-radius: 6px;
+            font-size: 9px;
+            margin-left: 3px;
+            font-weight: 700;
+        }
+        .viewer-tab.active .tab-badge {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        /* iframe 컨테이너 */
+        .viewer-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 110px);
+            background: white;
+            overflow: hidden;
+        }
+        .viewer-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+        }
+        .viewer-frame.active {
+            display: block;
+        }
+
+        /* 로딩 스피너 */
+        .loader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .loader-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f4f6;
+            border-top-color: #FF9F43;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 에러 메시지 */
+        .error-message {
+            max-width: 400px;
+            text-align: center;
+            padding: 24px;
+        }
+
+        /* 뒤로가기 버튼 */
+        .back-btn {
+            transition: all 0.2s ease;
+        }
+        .back-btn:hover {
+            transform: scale(1.05);
+        }
+        .back-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 반응형 */
+        @media (max-width: 640px) {
+            .viewer-tabs {
+                padding: 5px 8px;
+                gap: 3px;
+            }
+            .viewer-tab {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+            .viewer-tab .tab-icon {
+                font-size: 12px;
+            }
+            .viewer-tab .tab-badge {
+                font-size: 8px;
+                padding: 1px 4px;
+            }
+            .viewer-container {
+                height: calc(100vh - 100px);
+            }
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 h-screen overflow-hidden">
+    <!-- Top Header -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-orange-100 shadow-sm">
+        <div class="flex items-center justify-between px-4 py-3">
+            <!-- Left: Back & Book Info -->
+            <div class="flex items-center gap-3">
+                <button onclick="goBack()" class="back-btn w-10 h-10 bg-orange-50 hover:bg-orange-100 rounded-xl flex items-center justify-center text-brand-primary transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl" id="content-icon">📖</span>
+                    <div>
+                        <h1 class="font-noto text-base text-gray-800" id="content-title">통합 뷰어</h1>
+                        <p class="text-xs text-gray-400" id="content-subtitle">독서 · 영상 · 학습 · 활동</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Test Button + User Level Badge -->
+            <div class="flex items-center gap-2">
+                <!-- 완독 테스트 버튼 -->
+                <button onclick="testBookCompletion()" class="hidden sm:flex items-center gap-2 bg-green-100 hover:bg-green-200 px-3 py-2 rounded-xl text-green-700 text-sm font-bold transition-colors" title="완독 테스트">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>완독 테스트</span>
+                </button>
+
+                <!-- User Level Badge -->
+                <div class="hidden sm:flex items-center gap-2 bg-gradient-to-r from-orange-50 to-amber-50 px-4 py-2 rounded-full border border-orange-100">
+                    <span class="text-xl">🐿️</span>
+                    <span class="font-noto text-sm text-brand-primary font-bold">Lv.5</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Viewer Tabs -->
+    <nav class="viewer-tabs" id="viewer-tabs">
+        <button class="viewer-tab active" data-viewer="book" onclick="switchViewer('book')">
+            <span class="tab-icon">📖</span>
+            <span>도서 뷰어</span>
+        </button>
+        <button class="viewer-tab" data-viewer="video" onclick="switchViewer('video')">
+            <span class="tab-icon">🎥</span>
+            <span>영상 뷰어</span>
+        </button>
+        <button class="viewer-tab" data-viewer="play" onclick="switchViewer('play')">
+            <span class="tab-icon">🎮</span>
+            <span>놀이학습</span>
+        </button>
+        <button class="viewer-tab" data-viewer="activity" onclick="switchViewer('activity')">
+            <span class="tab-icon">✏️</span>
+            <span>활동툴</span>
+            <span class="tab-badge">NEW</span>
+        </button>
+        <button class="viewer-tab" data-viewer="album" onclick="switchViewer('album')">
+            <span class="tab-icon">📔</span>
+            <span>독서앨범</span>
+        </button>
+    </nav>
+
+    <!-- Viewer Container -->
+    <div class="viewer-container" id="viewer-container">
+        <!-- Loading Overlay -->
+        <div class="loader-overlay" id="loader-overlay">
+            <div class="loader-spinner"></div>
+            <p class="font-noto text-gray-600 mt-4">뷰어를 불러오는 중...</p>
+        </div>
+
+        <!-- Book Viewer -->
+        <iframe id="frame-book"
+            class="viewer-frame active"
+            src="../../북클럽3.0_통합뷰어/prototype/1.통합뷰어/북클럽3.0_독서뷰어_v0.3.html"
+            title="독서 뷰어">
+        </iframe>
+
+        <!-- Video Viewer -->
+        <iframe id="frame-video"
+            class="viewer-frame"
+            src="../../북클럽3.0_통합뷰어/prototype/2.영상뷰어/북클럽3.0_영상뷰어_v0.2.html"
+            title="영상 뷰어">
+        </iframe>
+
+        <!-- Play Learning -->
+        <iframe id="frame-play"
+            class="viewer-frame"
+            src="../../북클럽3.0_통합뷰어/prototype/3.놀이학습/북클럽3.0_놀이학습_v1.1.html"
+            title="놀이학습">
+        </iframe>
+
+        <!-- Activity Tool -->
+        <iframe id="frame-activity"
+            class="viewer-frame"
+            src="../../북클럽3.0_통합뷰어/prototype/4.활동툴/북클럽3.0_활동툴_감상문쓰기_v1.0.html"
+            title="활동툴">
+        </iframe>
+
+        <!-- Reading Album -->
+        <iframe id="frame-album"
+            class="viewer-frame"
+            src="../../북클럽3.0_통합뷰어/prototype/5.독서앨범/북클럽3.0_독서앨범_생각갤러리_v0.3.html"
+            title="독서앨범">
+        </iframe>
+
+        <!-- Error Message (hidden by default) -->
+        <div class="error-message hidden" id="error-message">
+            <div class="text-6xl mb-4">😢</div>
+            <h3 class="font-noto text-xl text-gray-800 mb-2">뷰어를 불러올 수 없습니다</h3>
+            <p class="text-sm text-gray-500 mb-4">파일 경로를 확인해주세요.</p>
+            <button onclick="retryLoad()" class="px-6 py-2 bg-brand-primary text-white rounded-xl hover:bg-orange-600 transition-colors">
+                <i class="fa-solid fa-rotate-right mr-2"></i>다시 시도
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 현재 활성화된 뷰어
+        let currentViewer = 'book';
+
+        // 뷰어 정보
+        const viewerInfo = {
+            book: {
+                icon: '📖',
+                title: '독서 뷰어',
+                subtitle: 'AI 버디와 함께 읽기'
+            },
+            video: {
+                icon: '🎥',
+                title: '영상 뷰어',
+                subtitle: '영상 학습 콘텐츠'
+            },
+            play: {
+                icon: '🎮',
+                title: '놀이학습',
+                subtitle: '게임으로 배우기'
+            },
+            activity: {
+                icon: '✏️',
+                title: '활동툴',
+                subtitle: '감상문 · 그리기 · 꾸미기'
+            },
+            album: {
+                icon: '📔',
+                title: '독서앨범',
+                subtitle: '생각갤러리'
+            }
+        };
+
+        /**
+         * 뷰어 전환
+         */
+        function switchViewer(viewerType) {
+            if (currentViewer === viewerType) return;
+
+            // 탭 활성화 상태 변경
+            document.querySelectorAll('.viewer-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-viewer="${viewerType}"]`).classList.add('active');
+
+            // iframe 활성화 상태 변경
+            document.querySelectorAll('.viewer-frame').forEach(frame => {
+                frame.classList.remove('active');
+            });
+            document.getElementById(`frame-${viewerType}`).classList.add('active');
+
+            // 헤더 정보 업데이트
+            const info = viewerInfo[viewerType];
+            document.getElementById('content-icon').textContent = info.icon;
+            document.getElementById('content-title').textContent = info.title;
+            document.getElementById('content-subtitle').textContent = info.subtitle;
+
+            // 현재 뷰어 저장
+            currentViewer = viewerType;
+            sessionStorage.setItem('currentViewer', viewerType);
+
+            console.log(`[Viewer] Switched to: ${viewerType}`);
+        }
+
+        /**
+         * 뷰어 재시도
+         */
+        function retryLoad() {
+            location.reload();
+        }
+
+        /**
+         * iframe 로딩 완료 이벤트
+         */
+        function handleFrameLoad(viewerType) {
+            console.log(`[Viewer] ${viewerType} loaded successfully`);
+
+            // 첫 번째 뷰어 로딩 완료 시 로딩 오버레이 숨김
+            if (viewerType === 'book') {
+                setTimeout(() => {
+                    document.getElementById('loader-overlay').style.display = 'none';
+                }, 500);
+            }
+        }
+
+        /**
+         * iframe 로딩 에러 이벤트
+         */
+        function handleFrameError(viewerType) {
+            console.error(`[Viewer] ${viewerType} failed to load`);
+
+            if (viewerType === currentViewer) {
+                document.getElementById('loader-overlay').style.display = 'none';
+                document.getElementById('error-message').classList.remove('hidden');
+            }
+        }
+
+        /**
+         * postMessage 통신 수신
+         */
+        window.addEventListener('message', (event) => {
+            // 보안: origin 체크 (프로덕션에서는 실제 도메인 체크)
+            // if (event.origin !== 'https://your-domain.com') return;
+
+            const { type, data } = event.data;
+
+            console.log('[Viewer] Message received:', type, data);
+
+            switch (type) {
+                case 'VIEWER_READY':
+                    console.log(`[Viewer] ${data.viewer} is ready`);
+                    break;
+
+                case 'PAGE_CHANGED':
+                    console.log('[Viewer] Page changed:', data);
+                    // 페이지 진행률 업데이트
+                    handlePageProgress(data);
+                    break;
+
+                case 'BOOK_COMPLETED':
+                    console.log('[Viewer] Book reading completed:', data);
+                    // 완독 이벤트 처리
+                    handleBookCompletion(data);
+                    break;
+
+                case 'ACTIVITY_SAVED':
+                    console.log('[Viewer] Activity saved:', data);
+                    // 활동 저장 이벤트 처리
+                    handleActivitySaved(data);
+                    break;
+
+                case 'VIDEO_ENDED':
+                    console.log('[Viewer] Video ended:', data);
+                    // 영상 완료 이벤트 처리
+                    handleVideoEnded(data);
+                    break;
+
+                default:
+                    console.warn('[Viewer] Unknown message type:', type);
+            }
+        });
+
+        /**
+         * 페이지 진행률 업데이트
+         */
+        function handlePageProgress(data) {
+            const progressData = {
+                bookId: data.bookId,
+                currentPage: data.currentPage || 1,
+                totalPages: data.totalPages || 32,
+                percentage: data.percentage || 0,
+                lastRead: new Date().toISOString()
+            };
+
+            // 현재 책 정보 업데이트
+            const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+            currentBook.currentPage = progressData.currentPage;
+            currentBook.totalPages = progressData.totalPages;
+            currentBook.percentage = progressData.percentage;
+            currentBook.lastRead = progressData.lastRead;
+            sessionStorage.setItem('currentBook', JSON.stringify(currentBook));
+
+            // 읽기 진행률 저장
+            sessionStorage.setItem('readingProgress', JSON.stringify(progressData));
+
+            console.log('[Viewer] Progress updated:', progressData);
+        }
+
+        /**
+         * 완독 이벤트 처리
+         */
+        function handleBookCompletion(data) {
+            // 완독 데이터 저장
+            const completionData = {
+                bookId: data.bookId,
+                bookTitle: data.bookTitle,
+                completedAt: new Date().toISOString(),
+                readingTime: data.readingTime || 0,
+                pageCount: data.pageCount || 0
+            };
+
+            // sessionStorage에 저장
+            const completions = JSON.parse(sessionStorage.getItem('bookCompletions') || '[]');
+            completions.push(completionData);
+            sessionStorage.setItem('bookCompletions', JSON.stringify(completions));
+
+            // 완독 플래그 설정 (홈으로 돌아갈 때 사용)
+            sessionStorage.setItem('bookJustCompleted', 'true');
+            sessionStorage.setItem('lastCompletedBook', JSON.stringify(completionData));
+
+            console.log('[Viewer] Book completion saved:', completionData);
+        }
+
+        /**
+         * 활동 저장 이벤트 처리
+         */
+        function handleActivitySaved(data) {
+            console.log('[Viewer] Activity data:', data);
+            // 활동 데이터는 이미 각 뷰어에서 localStorage에 저장됨
+        }
+
+        /**
+         * 영상 완료 이벤트 처리
+         */
+        function handleVideoEnded(data) {
+            const videoData = {
+                videoId: data.videoId,
+                videoTitle: data.videoTitle,
+                completedAt: new Date().toISOString(),
+                watchTime: data.watchTime || 0
+            };
+
+            const completions = JSON.parse(sessionStorage.getItem('videoCompletions') || '[]');
+            completions.push(videoData);
+            sessionStorage.setItem('videoCompletions', JSON.stringify(completions));
+
+            console.log('[Viewer] Video completion saved:', videoData);
+        }
+
+        /**
+         * 데이터 전송 (iframe으로)
+         */
+        function sendMessageToViewer(viewerType, messageType, data) {
+            const frame = document.getElementById(`frame-${viewerType}`);
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({
+                    type: messageType,
+                    data: data
+                }, '*');
+            }
+        }
+
+        /**
+         * 완독 테스트 (개발용)
+         */
+        function testBookCompletion() {
+            const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+
+            const testData = {
+                bookId: currentBook.id || 'test-book-1',
+                bookTitle: currentBook.title || '테스트 도서',
+                completedAt: new Date().toISOString(),
+                readingTime: 1200, // 20분
+                pageCount: 32
+            };
+
+            console.log('[Test] Simulating book completion:', testData);
+
+            // 완독 이벤트 직접 호출
+            handleBookCompletion(testData);
+
+            // 사용자 알림
+            alert('✅ 완독 이벤트가 발생했습니다!\n홈으로 돌아가서 완독 뱃지를 확인하세요.');
+        }
+
+        /**
+         * 페이지 진행률 테스트 (개발용)
+         */
+        function testPageProgress(page = 15) {
+            const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+
+            const testData = {
+                bookId: currentBook.id || 'test-book-1',
+                currentPage: page,
+                totalPages: 32,
+                percentage: (page / 32) * 100
+            };
+
+            console.log('[Test] Simulating page progress:', testData);
+
+            // 진행률 이벤트 직접 호출
+            handlePageProgress(testData);
+
+            alert(`✅ 페이지 ${page}/32 진행률이 저장되었습니다!`);
+        }
+
+        /**
+         * 초기화
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[Viewer] Integrated viewer initialized');
+
+            // iframe 로드 이벤트 바인딩
+            document.querySelectorAll('.viewer-frame').forEach(frame => {
+                const viewerType = frame.id.replace('frame-', '');
+
+                frame.addEventListener('load', () => handleFrameLoad(viewerType));
+                frame.addEventListener('error', () => handleFrameError(viewerType));
+            });
+
+            // 이전 뷰어 상태 복원
+            const savedViewer = sessionStorage.getItem('currentViewer');
+            if (savedViewer && savedViewer !== 'book') {
+                switchViewer(savedViewer);
+            }
+
+            // URL 파라미터로 뷰어 선택
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewerParam = urlParams.get('viewer');
+            if (viewerParam && viewerInfo[viewerParam]) {
+                switchViewer(viewerParam);
+            }
+
+            // 사용자 정보 전달 (모든 뷰어에게)
+            setTimeout(() => {
+                const userInfo = AppState.getUserInfo();
+                Object.keys(viewerInfo).forEach(viewerType => {
+                    sendMessageToViewer(viewerType, 'USER_INFO', userInfo);
+                });
+            }, 1000);
+        });
+
+        // 전역 함수로 내보내기
+        window.switchViewer = switchViewer;
+        window.sendMessageToViewer = sendMessageToViewer;
+        window.testBookCompletion = testBookCompletion;
+        window.testPageProgress = testPageProgress;
+    </script>
+</body>
+</html>

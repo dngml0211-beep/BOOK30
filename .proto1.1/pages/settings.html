@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>북클럽 3.0 통합 설정 시스템</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body,#root{width:100%;height:100%;overflow:hidden;background:#F5F5F5}
+
+.custom-scroll::-webkit-scrollbar{width:8px}
+.custom-scroll::-webkit-scrollbar-track{background:#F5F5F5;border-radius:10px}
+.custom-scroll::-webkit-scrollbar-thumb{background:#FFB84D;border-radius:10px}
+
+/* 토글 스위치 */
+.toggle-switch{
+  position:relative;
+  width:52px;
+  height:28px;
+  background:#CBD5E1;
+  border-radius:14px;
+  cursor:pointer;
+  transition:background 0.3s ease;
+}
+
+.toggle-switch.active{
+  background:linear-gradient(135deg,#FF8C42 0%,#FFB84D 100%);
+}
+
+.toggle-knob{
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:24px;
+  height:24px;
+  background:white;
+  border-radius:12px;
+  transition:transform 0.3s ease;
+  box-shadow:0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch.active .toggle-knob{
+  transform:translateX(24px);
+}
+
+/* 슬라이더 */
+.slider{
+  -webkit-appearance:none;
+  width:100%;
+  height:8px;
+  border-radius:4px;
+  background:#E5E7EB;
+  outline:none;
+}
+
+.slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:20px;
+  height:20px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#FF8C42 0%,#FFB84D 100%);
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState } = React;
+
+/* ══════════════════════════════════════════════
+   화면 타입 정의
+   ══════════════════════════════════════════════ */
+const SCREEN_TYPES = {
+  LAUNCHER: {
+    id: 'launcher',
+    name: '기존 북클럽 런처',
+    description: '전용 패드 3단 컬럼 레이아웃'
+  },
+  PERSONAL: {
+    id: 'personal',
+    name: '개인 패드 회원',
+    description: '홈페이지/앱 독립 구독'
+  },
+  KRS: {
+    id: 'krs',
+    name: 'KRS 설정',
+    description: '북패드 회원 멤버십 + KRS 구독'
+  }
+};
+
+/* ══════════════════════════════════════════════
+   메인 앱
+   ══════════════════════════════════════════════ */
+function App() {
+  const [currentScreen, setCurrentScreen] = useState(SCREEN_TYPES.LAUNCHER);
+  const [brightness, setBrightness] = useState(70);
+  const [volume, setVolume] = useState(50);
+  const [bluetooth, setBluetooth] = useState(true);
+  const [bluelightFilter, setBluelightFilter] = useState(false);
+  const [aiBuddy, setAiBuddy] = useState(true);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordTarget, setPasswordTarget] = useState(null);
+
+  const handleLockedMenuClick = (target) => {
+    setPasswordTarget(target);
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordSubmit = (password) => {
+    if (password === '1234') {
+      alert(`${passwordTarget} 메뉴로 이동합니다`);
+      setShowPasswordModal(false);
+      setPasswordTarget(null);
+    } else {
+      alert('비밀번호가 일치하지 않습니다');
+    }
+  };
+
+  const handleExitKRS = () => {
+    if (confirm('북클럽 3.0(KRS)에서 나가시겠습니까?\n기존 북클럽 런처로 돌아갑니다.')) {
+      alert('기존 북클럽 런처로 돌아갑니다.');
+      setCurrentScreen(SCREEN_TYPES.LAUNCHER);
+    }
+  };
+
+  return (
+    <div className="w-full h-full flex flex-col bg-gray-100">
+      {/* 개발자 확인용 화면 선택 */}
+      <div className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg">
+        <div className="text-xs text-white mb-2 font-semibold">🔧 개발 확인용 화면 선택</div>
+        <div className="flex gap-2">
+          {Object.values(SCREEN_TYPES).map((screen) => (
+            <button
+              key={screen.id}
+              onClick={() => setCurrentScreen(screen)}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                currentScreen.id === screen.id
+                  ? 'bg-white text-purple-600 shadow-lg'
+                  : 'bg-purple-500 bg-opacity-50 text-white hover:bg-opacity-70'
+              }`}
+            >
+              <div className="font-bold">{screen.name}</div>
+              <div className="text-xs opacity-90">{screen.description}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 헤더 */}
+      <header className="px-6 py-4 bg-white shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button className="text-gray-600" onClick={() => window.history.back()}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">설정</h1>
+            {currentScreen.id === 'launcher' && (
+              <p className="text-xs text-gray-500">기존 북클럽 런처</p>
+            )}
+          </div>
+        </div>
+        {currentScreen.id === 'launcher' && (
+          <button
+            onClick={() => handleLockedMenuClick('서비스 나가기')}
+            className="text-orange-500 font-semibold flex items-center gap-1"
+          >
+            <span className="text-lg">🔥</span>
+            <span>서비스 나가기</span>
+          </button>
+        )}
+      </header>
+
+      {/* 사용자 정보 (개인 패드 & KRS) */}
+      {(currentScreen.id === 'personal' || currentScreen.id === 'krs') && (
+        <div className="px-6 py-3 bg-white border-b">
+          <div className="text-sm text-gray-500">
+            {currentScreen.id === 'personal' ? '개인 패드 회원' : '북패드 회원'}
+          </div>
+          <div className="text-base font-semibold text-gray-900">
+            {currentScreen.id === 'personal' ? '홈페이지/앱 독립 구독' : '멤버십 + KRS 구독'}
+          </div>
+        </div>
+      )}
+
+      {/* 메인 콘텐츠 */}
+      <div className="flex-1 overflow-y-auto custom-scroll p-6">
+        {currentScreen.id === 'launcher' && (
+          <LauncherScreen
+            brightness={brightness}
+            setBrightness={setBrightness}
+            volume={volume}
+            setVolume={setVolume}
+            bluetooth={bluetooth}
+            setBluetooth={setBluetooth}
+            bluelightFilter={bluelightFilter}
+            setBluelightFilter={setBluelightFilter}
+            handleLockedMenuClick={handleLockedMenuClick}
+          />
+        )}
+
+        {currentScreen.id === 'personal' && (
+          <PersonalScreen aiBuddy={aiBuddy} setAiBuddy={setAiBuddy} />
+        )}
+
+        {currentScreen.id === 'krs' && (
+          <KRSScreen
+            aiBuddy={aiBuddy}
+            setAiBuddy={setAiBuddy}
+            brightness={brightness}
+            setBrightness={setBrightness}
+            volume={volume}
+            setVolume={setVolume}
+            bluetooth={bluetooth}
+            setBluetooth={setBluetooth}
+            bluelightFilter={bluelightFilter}
+            setBluelightFilter={setBluelightFilter}
+          />
+        )}
+      </div>
+
+      {/* 하단 버튼 */}
+      {currentScreen.id === 'personal' && (
+        <div className="px-6 py-4 bg-white border-t">
+          <button className="w-full px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200">
+            🚪 로그아웃
+          </button>
+        </div>
+      )}
+
+      {currentScreen.id === 'krs' && (
+        <div className="px-6 py-4 bg-white border-t">
+          <button
+            onClick={handleExitKRS}
+            className="w-full px-6 py-3 bg-orange-50 text-orange-600 font-semibold rounded-lg hover:bg-orange-100 border-2 border-orange-200"
+          >
+            🔥 북클럽 3.0 나가기
+          </button>
+        </div>
+      )}
+
+      {/* 비밀번호 모달 */}
+      {showPasswordModal && (
+        <PasswordModal
+          target={passwordTarget}
+          onSubmit={handlePasswordSubmit}
+          onCancel={() => {
+            setShowPasswordModal(false);
+            setPasswordTarget(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   화면 컴포넌트들
+   ══════════════════════════════════════════════ */
+
+// 기존 북클럽 런처 화면 (3단 컬럼)
+function LauncherScreen({ brightness, setBrightness, volume, setVolume, bluetooth, setBluetooth, bluelightFilter, setBluelightFilter, handleLockedMenuClick }) {
+  return (
+    <div className="grid grid-cols-3 gap-6 max-w-7xl mx-auto">
+      {/* 좌측 컬럼 */}
+      <div className="space-y-4">
+        <Card title="배터리">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl font-bold">93%</span>
+            <div className="w-16 h-8 border-2 border-gray-400 rounded relative">
+              <div className="absolute inset-0.5 bg-orange-500 rounded" style={{width: '93%'}}></div>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="와이파이">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              <span className="font-medium text-orange-600">4F-PRD-3</span>
+            </div>
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Card>
+
+        <Card title="밝기">
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+            </svg>
+            <input type="range" min="0" max="100" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="slider flex-1" />
+            <span className="text-sm font-medium text-orange-600 w-10 text-right">{brightness}%</span>
+          </div>
+        </Card>
+
+        <Card title="음량">
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+            </svg>
+            <input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(Number(e.target.value))} className="slider flex-1" />
+            <span className="text-sm font-medium text-orange-600 w-10 text-right">{volume}%</span>
+          </div>
+        </Card>
+
+        <MenuItem label="공지/이벤트" color="orange" />
+        <MenuItem label="고객센터" color="orange" />
+        <MenuItem label="약관 및 정책" />
+      </div>
+
+      {/* 중앙 컬럼 */}
+      <div className="space-y-4">
+        <Card title="기기 설정">
+          <div className="space-y-3">
+            <SettingRow label="진단 매니저" status="정상" statusColor="green" />
+            <SettingRow label="어플리케이션 매니저" status="업데이트" statusColor="orange" />
+            <SettingRow label="디바이스 매니저" status="OFF" />
+            <SettingRow label="자녀안심 매니저" status="OFF" />
+            <SettingRow label="스토리지 매니저" status="27.4GB" statusColor="orange" />
+            <SettingRow label="블루투스 연결" status="ON" statusColor="orange" toggle value={bluetooth} onChange={setBluetooth} />
+            <SettingRow label="블루라이트 필터" status="OFF" toggle value={bluelightFilter} onChange={setBluelightFilter} />
+            <SettingRow label="스크린미러링 연결" />
+            <SettingRow label="원격 지원" />
+          </div>
+        </Card>
+      </div>
+
+      {/* 우측 컬럼 */}
+      <div className="space-y-4">
+        <Card title="멤버십 이용설정">
+          <div className="space-y-3">
+            <LockedRow label="회원 정보" sublabel="가입정보조회/변경" onClick={() => handleLockedMenuClick('회원 정보')} />
+            <LockedRow label="포인트 통장" sublabel="포인트/마일리지 조회" onClick={() => handleLockedMenuClick('포인트 통장')} />
+            <GrayRow label="학습 옵션 변경" sublabel="학습기능 제어" locked />
+            <GrayRow label="알람 설정" sublabel="알람 설정 관리" />
+          </div>
+        </Card>
+
+        <Card title="서비스">
+          <div className="space-y-3">
+            <LockedRow label="기간 이용권" sublabel="이용권 구매" onClick={() => handleLockedMenuClick('기간 이용권')} />
+            <SettingRow label="독서성장상담" status="상담평가/시독서진단" />
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// 개인 패드 회원 화면
+function PersonalScreen({ aiBuddy, setAiBuddy }) {
+  return (
+    <div className="max-w-2xl mx-auto space-y-4">
+      <Card title="🎨 북클럽 3.0 전용 기능">
+        <SettingRow label="AI 독서 버디" toggle value={aiBuddy} onChange={setAiBuddy} />
+      </Card>
+
+      <Card title="👤 계정 관리">
+        <div className="space-y-3">
+          <MenuItem label="계정 정보" />
+          <MenuItem label="구독 관리" />
+          <MenuItem label="계정 탈퇴" color="red" />
+        </div>
+      </Card>
+
+      <Card title="💬 고객센터">
+        <div className="space-y-3">
+          <MenuItem label="자주 묻는 질문" />
+          <MenuItem label="1:1 문의" />
+        </div>
+      </Card>
+
+      <Card title="📋 약관 및 정책">
+        <div className="space-y-3">
+          <MenuItem label="서비스 이용약관" />
+          <MenuItem label="개인정보 처리방침" />
+        </div>
+      </Card>
+
+      <div className="text-center text-sm text-gray-400 py-4">버전 1.0.0</div>
+    </div>
+  );
+}
+
+// KRS 설정 화면
+function KRSScreen({ aiBuddy, setAiBuddy, brightness, setBrightness, volume, setVolume, bluetooth, setBluetooth, bluelightFilter, setBluelightFilter }) {
+  return (
+    <div className="max-w-2xl mx-auto space-y-4">
+      <Card title="🎨 북클럽 3.0 전용 기능">
+        <SettingRow label="AI 독서 버디" toggle value={aiBuddy} onChange={setAiBuddy} />
+      </Card>
+
+      <Card title="⚙️ 기기 설정">
+        <div className="space-y-4">
+          <div className="pb-3 border-b border-gray-100">
+            <div className="text-xs text-gray-500 mb-2">배터리</div>
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-bold">93%</span>
+              <div className="w-16 h-6 border-2 border-gray-400 rounded relative">
+                <div className="absolute inset-0.5 bg-orange-500 rounded" style={{width: '93%'}}></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pb-3 border-b border-gray-100">
+            <div className="text-xs text-gray-500 mb-2">와이파이</div>
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              <span className="text-sm font-medium text-orange-600">4F-PRD-3</span>
+            </div>
+          </div>
+
+          <div className="pb-3 border-b border-gray-100">
+            <div className="text-xs text-gray-500 mb-2">밝기</div>
+            <div className="flex items-center gap-3">
+              <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+              </svg>
+              <input type="range" min="0" max="100" value={brightness} onChange={(e) => setBrightness(Number(e.target.value))} className="slider flex-1" />
+              <span className="text-xs font-medium text-orange-600 w-10 text-right">{brightness}%</span>
+            </div>
+          </div>
+
+          <div className="pb-3 border-b border-gray-100">
+            <div className="text-xs text-gray-500 mb-2">음량</div>
+            <div className="flex items-center gap-3">
+              <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+              </svg>
+              <input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(Number(e.target.value))} className="slider flex-1" />
+              <span className="text-xs font-medium text-orange-600 w-10 text-right">{volume}%</span>
+            </div>
+          </div>
+
+          <SettingRow label="블루투스 연결" toggle value={bluetooth} onChange={setBluetooth} />
+          <SettingRow label="블루라이트 필터" toggle value={bluelightFilter} onChange={setBluelightFilter} />
+          <MenuItem label="스크린미러링 연결" />
+          <MenuItem label="자녀안심 매니저" sublabel="OFF" />
+          <MenuItem label="진단 매니저" sublabel="정상" statusColor="green" />
+        </div>
+      </Card>
+
+      <Card title="💬 고객센터">
+        <div className="space-y-3">
+          <MenuItem label="공지/이벤트" />
+          <MenuItem label="자주 묻는 질문" />
+          <MenuItem label="1:1 문의" />
+        </div>
+      </Card>
+
+      <Card title="📋 약관 및 정책">
+        <div className="space-y-3">
+          <MenuItem label="서비스 이용약관" />
+          <MenuItem label="개인정보 처리방침" />
+        </div>
+      </Card>
+
+      <div className="text-center text-sm text-gray-400 py-4">북클럽 3.0 (KRS) v1.0.0</div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   공통 컴포넌트들
+   ══════════════════════════════════════════════ */
+function Card({ title, children }) {
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm">
+      {title && <h3 className="text-sm font-bold text-gray-700 mb-3">{title}</h3>}
+      {children}
+    </div>
+  );
+}
+
+function MenuItem({ label, sublabel, color, statusColor }) {
+  return (
+    <button className={`w-full bg-white rounded-xl p-4 shadow-sm flex items-center justify-between ${
+      color === 'orange' ? 'text-orange-500 font-semibold' :
+      color === 'red' ? 'text-red-500' :
+      'text-gray-700'
+    }`}>
+      <span className="text-sm">{label}</span>
+      <div className="flex items-center gap-2">
+        {sublabel && (
+          <span className={`text-xs ${
+            statusColor === 'green' ? 'text-green-600' :
+            statusColor === 'orange' ? 'text-orange-600' :
+            'text-gray-500'
+          }`}>{sublabel}</span>
+        )}
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </button>
+  );
+}
+
+function SettingRow({ label, status, statusColor, toggle, value, onChange }) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-sm text-gray-700">{label}</span>
+      {toggle ? (
+        <div className={`toggle-switch ${value ? 'active' : ''}`} onClick={() => onChange && onChange(!value)}>
+          <div className="toggle-knob"></div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          {status && (
+            <span className={`text-sm ${
+              statusColor === 'green' ? 'text-green-600' :
+              statusColor === 'orange' ? 'text-orange-600' :
+              'text-gray-400'
+            }`}>{status}</span>
+          )}
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LockedRow({ label, sublabel, onClick }) {
+  return (
+    <button onClick={onClick} className="w-full flex items-center justify-between py-2 hover:bg-gray-50 rounded">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-700">{label}</span>
+        <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+        </svg>
+      </div>
+      <span className="text-xs text-gray-500">{sublabel}</span>
+    </button>
+  );
+}
+
+function GrayRow({ label, sublabel, locked }) {
+  return (
+    <div className="bg-gray-200 rounded p-3 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-600">{label}</span>
+        {locked && (
+          <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          </svg>
+        )}
+      </div>
+      <span className="text-xs text-gray-500">{sublabel}</span>
+    </div>
+  );
+}
+
+function PasswordModal({ target, onSubmit, onCancel }) {
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(password);
+    setPassword('');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+        <div className="text-center mb-4">
+          <div className="text-4xl mb-2">🔒</div>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">자녀 보호</h3>
+          <p className="text-sm text-gray-600">보호자 비밀번호를 입력하세요</p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호 (테스트: 1234)"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-400 focus:outline-none text-center text-lg"
+              autoFocus
+            />
+          </div>
+
+          <div className="text-sm text-gray-500 mb-4 text-center">
+            접근 메뉴: <span className="font-semibold text-gray-700">{target}</span>
+          </div>
+
+          <div className="flex gap-2">
+            <button type="button" onClick={onCancel} className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg">
+              취소
+            </button>
+            <button type="submit" className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-400 to-yellow-400 text-white font-semibold rounded-lg">
+              확인
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   렌더링
+   ══════════════════════════════════════════════ */
+ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>

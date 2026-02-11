@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 어휘 챌린지</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1'
+                        },
+                        game: {
+                            purple: '#7C3AED',
+                            purpleDark: '#5B21B6',
+                            blue: '#3B82F6',
+                            green: '#10B981',
+                            yellow: '#F59E0B',
+                            red: '#EF4444',
+                            pink: '#EC4899'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        /* 단순한 단색 배경 */
+        body {
+            background: #1E1B4B;
+        }
+
+        /* 3D 버튼 스타일 */
+        .btn-3d {
+            transform: translateY(-4px);
+            transition: all 0.1s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(0);
+        }
+
+        /* 단어 카드 스타일 */
+        .word-card {
+            background: white;
+            color: #1E1B4B;
+            border-radius: 20px;
+            padding: 16px 24px;
+            font-weight: bold;
+            font-size: 1.25rem;
+            cursor: pointer;
+            position: absolute;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.2), 0 12px 30px rgba(0,0,0,0.3);
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .word-card:hover {
+            transform: scale(1.05);
+        }
+        .word-card:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 6px 15px rgba(0,0,0,0.3);
+        }
+        .word-card.correct {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+            animation: correctPop 0.5s ease;
+        }
+        .word-card.wrong {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+            animation: shake 0.5s ease;
+        }
+        .word-card.hidden-card {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0);
+        }
+
+        @keyframes correctPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* 중앙 키워드 카드 */
+        .keyword-card {
+            background: linear-gradient(135deg, #7C3AED, #5B21B6);
+            border-radius: 24px;
+            padding: 24px 48px;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            box-shadow: 0 12px 0 #4C1D95, 0 16px 40px rgba(0,0,0,0.4);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        /* 콤보 텍스트 */
+        .combo-text {
+            position: fixed;
+            font-size: 3rem;
+            font-weight: bold;
+            color: #FCD34D;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.5), 0 0 40px rgba(252, 211, 77, 0.5);
+            animation: comboPopup 1s ease forwards;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @keyframes comboPopup {
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            30% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) translateY(-50px) rotate(0deg); opacity: 0; }
+        }
+
+        /* 에너지/하트 바 */
+        .heart-container {
+            display: flex;
+            gap: 8px;
+        }
+        .heart {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            transition: all 0.3s ease;
+        }
+        .heart.lost {
+            filter: grayscale(1);
+            opacity: 0.3;
+        }
+
+        /* 콤보 점수판 */
+        .combo-display {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            border-radius: 16px;
+            padding: 8px 20px;
+            box-shadow: 0 4px 0 #B45309, 0 6px 15px rgba(0,0,0,0.3);
+        }
+
+        /* 타이머 바 */
+        .timer-track {
+            height: 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #34D399);
+            border-radius: 999px;
+            transition: width 0.1s linear;
+        }
+        .timer-fill.warning {
+            background: linear-gradient(90deg, #F59E0B, #FBBF24);
+        }
+        .timer-fill.danger {
+            background: linear-gradient(90deg, #EF4444, #F87171);
+        }
+
+        /* 힌트 영역 */
+        .hint-box {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 12px 24px;
+        }
+
+        /* 완료 화면 배지 */
+        .badge-stamp {
+            animation: stampIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes stampIn {
+            0% { transform: scale(3) rotate(-30deg); opacity: 0; }
+            70% { transform: scale(0.9) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* 플로팅 애니메이션 */
+        .float-1 { animation: float1 4s ease-in-out infinite; }
+        .float-2 { animation: float2 3.5s ease-in-out infinite; }
+        .float-3 { animation: float3 5s ease-in-out infinite; }
+        .float-4 { animation: float4 4.5s ease-in-out infinite; }
+
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(15px, -20px); }
+        }
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-20px, 15px); }
+        }
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(10px, 25px); }
+        }
+        @keyframes float4 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-15px, -15px); }
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-sans text-white min-h-screen overflow-hidden">
+    <!-- 상단 헤더 -->
+    <header class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-3">
+                <!-- 닫기 버튼 -->
+                <button onclick="exitChallenge()" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+
+                <!-- 콤보 점수 -->
+                <div class="combo-display flex items-center gap-2">
+                    <span class="text-white/80 text-sm">콤보</span>
+                    <span id="combo-count" class="font-noto text-2xl text-white">0</span>
+                    <span class="text-xl">🔥</span>
+                </div>
+
+                <!-- 하트 -->
+                <div class="heart-container">
+                    <span class="heart" id="heart-1">❤️</span>
+                    <span class="heart" id="heart-2">❤️</span>
+                    <span class="heart" id="heart-3">❤️</span>
+                </div>
+            </div>
+
+            <!-- 타이머 바 -->
+            <div class="timer-track">
+                <div id="timer-bar" class="timer-fill" style="width: 100%"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 게임 영역 -->
+    <main class="h-screen flex flex-col items-center justify-center px-6 pt-24 pb-32" id="game-area">
+        <!-- 라운드 표시 -->
+        <div class="mb-4">
+            <span class="bg-white/20 backdrop-blur-sm text-white/90 px-4 py-2 rounded-full text-sm font-bold">
+                라운드 <span id="round-number">1</span> / <span id="total-rounds">3</span>
+            </span>
+        </div>
+
+        <!-- 힌트 -->
+        <div class="hint-box mb-8 slide-up">
+            <p id="hint-text" class="text-white/90 text-center">혀끝에서 느껴지는 기분 좋은 맛</p>
+        </div>
+
+        <!-- 중앙 키워드 -->
+        <div class="keyword-card font-noto mb-12 slide-up" id="keyword-card">
+            <span id="keyword-text">달콤하다</span>
+        </div>
+
+        <!-- 단어 카드들 (절대 위치) -->
+        <div class="relative w-full max-w-2xl h-64" id="cards-container">
+            <!-- 카드들이 동적으로 생성됨 -->
+        </div>
+
+        <!-- 점수 표시 -->
+        <div class="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4">
+            <div class="bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
+                <span class="text-white/70 text-sm">점수</span>
+                <span id="score" class="font-noto text-2xl text-white ml-2">0</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- 라운드 완료 화면 -->
+    <div id="round-complete" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+        <div class="text-center slide-up">
+            <div class="badge-stamp w-40 h-40 mx-auto mb-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-2xl">
+                <span class="text-6xl">💎</span>
+            </div>
+            <h2 class="font-noto text-4xl text-white mb-2" id="round-result-text">Excellent!</h2>
+            <p class="text-white/80 text-xl mb-6">콤보 <span id="round-combo">5</span>회 달성!</p>
+            <button onclick="nextRound()" class="btn-3d bg-gradient-to-r from-game-purple to-game-pink text-white font-noto text-xl px-10 py-4 rounded-2xl shadow-lg">
+                다음 라운드
+            </button>
+        </div>
+    </div>
+
+    <!-- 게임 완료 화면 -->
+    <div id="game-complete" class="hidden fixed inset-0 z-[200] bg-gradient-to-br from-game-purple via-purple-600 to-pink-500 flex items-center justify-center">
+        <div class="text-center px-6">
+            <!-- 트로피 뱃지 -->
+            <div class="badge-stamp w-48 h-48 mx-auto mb-8 bg-gradient-to-br from-yellow-300 via-yellow-400 to-orange-400 rounded-full flex items-center justify-center shadow-2xl border-8 border-yellow-200">
+                <span class="text-8xl">🏆</span>
+            </div>
+
+            <h2 class="font-noto text-5xl text-white mb-3">챌린지 완료!</h2>
+            <p class="text-white/90 text-2xl mb-8">대단해요! 모든 단계를 클리어했어요!</p>
+
+            <!-- 결과 카드들 -->
+            <div class="flex justify-center gap-4 mb-8">
+                <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/30">
+                    <p class="text-white/70 text-sm">최고 콤보</p>
+                    <p id="final-combo" class="font-noto text-3xl text-yellow-300">12</p>
+                </div>
+                <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/30">
+                    <p class="text-white/70 text-sm">총 점수</p>
+                    <p id="final-score" class="font-noto text-3xl text-white">450</p>
+                </div>
+                <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/30">
+                    <p class="text-white/70 text-sm">획득 별</p>
+                    <p class="font-noto text-3xl text-yellow-300">+50⭐</p>
+                </div>
+            </div>
+
+            <!-- 학습 완료 안내 -->
+            <div class="bg-white rounded-3xl p-6 max-w-md mx-auto shadow-2xl mb-6">
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl">✅</div>
+                    <div class="text-left">
+                        <p class="font-noto text-lg text-gray-800">이번 주 학습 완료!</p>
+                        <p class="text-sm text-gray-500">모든 활동을 마쳤어요</p>
+                    </div>
+                </div>
+                <button onclick="goToHome()" class="btn-3d w-full py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-noto text-xl rounded-2xl shadow-lg" style="box-shadow: 0 6px 0 #047857, 0 8px 20px rgba(0,0,0,0.2);">
+                    홈으로 돌아가기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 게임 데이터
+        const gameRounds = [
+            {
+                keyword: '달콤하다',
+                hint: '혀끝에서 느껴지는 기분 좋은 맛',
+                correctWords: ['사탕', '케이크'],
+                wrongWords: ['소금', '구두']
+            }
+        ];
+
+        // 게임 상태
+        let currentRound = 0;
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let hearts = 3;
+        let timeLeft = 100;
+        let timerInterval = null;
+        let correctWordsFound = 0;
+        let totalCorrectWords = 0;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            startGame();
+        });
+
+        function startGame() {
+            currentRound = 0;
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            hearts = 3;
+            loadRound();
+        }
+
+        function loadRound() {
+            const round = gameRounds[currentRound];
+            totalCorrectWords = round.correctWords.length;
+            correctWordsFound = 0;
+            timeLeft = 100;
+
+            // UI 업데이트
+            document.getElementById('keyword-text').textContent = round.keyword;
+            document.getElementById('hint-text').textContent = round.hint;
+            document.getElementById('round-number').textContent = currentRound + 1;
+            document.getElementById('total-rounds').textContent = gameRounds.length;
+
+            // 카드 생성
+            createWordCards(round);
+
+            // 타이머 시작
+            startTimer();
+        }
+
+        function createWordCards(round) {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+
+            const allWords = [...round.correctWords, ...round.wrongWords];
+            shuffleArray(allWords);
+
+            // 카드 위치 (4개의 코너 + 중간)
+            const positions = [
+                { top: '10%', left: '5%', float: 'float-1' },
+                { top: '10%', right: '5%', float: 'float-2' },
+                { bottom: '10%', left: '5%', float: 'float-3' },
+                { bottom: '10%', right: '5%', float: 'float-4' }
+            ];
+
+            allWords.forEach((word, index) => {
+                const card = document.createElement('div');
+                card.className = `word-card ${positions[index].float}`;
+                card.textContent = word;
+                card.dataset.word = word;
+                card.dataset.correct = round.correctWords.includes(word) ? 'true' : 'false';
+
+                // 위치 설정
+                const pos = positions[index];
+                if (pos.top) card.style.top = pos.top;
+                if (pos.bottom) card.style.bottom = pos.bottom;
+                if (pos.left) card.style.left = pos.left;
+                if (pos.right) card.style.right = pos.right;
+
+                card.onclick = () => selectWord(card);
+                container.appendChild(card);
+            });
+        }
+
+        function selectWord(card) {
+            const isCorrect = card.dataset.correct === 'true';
+
+            if (isCorrect) {
+                // 정답!
+                card.classList.add('correct');
+                correctWordsFound++;
+                combo++;
+                maxCombo = Math.max(maxCombo, combo);
+                score += 50 + (combo * 10);
+
+                updateUI();
+                showComboText(card);
+
+                // 카드 제거
+                setTimeout(() => {
+                    card.classList.add('hidden-card');
+                    checkRoundComplete();
+                }, 400);
+            } else {
+                // 오답
+                card.classList.add('wrong');
+                combo = 0;
+                loseHeart();
+                updateUI();
+
+                setTimeout(() => {
+                    card.classList.remove('wrong');
+                }, 500);
+            }
+        }
+
+        function showComboText(card) {
+            const texts = ['Good!', 'Great!', 'Excellent!', 'Amazing!', 'Perfect!'];
+            const textIndex = Math.min(combo - 1, texts.length - 1);
+
+            const comboEl = document.createElement('div');
+            comboEl.className = 'combo-text font-noto';
+            comboEl.textContent = texts[textIndex];
+
+            const rect = card.getBoundingClientRect();
+            comboEl.style.left = rect.left + rect.width / 2 + 'px';
+            comboEl.style.top = rect.top + 'px';
+            comboEl.style.transform = 'translateX(-50%)';
+
+            document.body.appendChild(comboEl);
+
+            setTimeout(() => {
+                comboEl.remove();
+            }, 1000);
+        }
+
+        function updateUI() {
+            document.getElementById('combo-count').textContent = combo;
+            document.getElementById('score').textContent = score;
+        }
+
+        function loseHeart() {
+            if (hearts > 0) {
+                const heartEl = document.getElementById(`heart-${hearts}`);
+                heartEl.classList.add('lost');
+                heartEl.textContent = '🖤';
+                hearts--;
+
+                if (hearts <= 0) {
+                    endGame();
+                }
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.5;
+                updateTimerUI();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    // 시간 초과 시 라운드 실패
+                    loseHeart();
+                    if (hearts > 0) {
+                        showRoundComplete();
+                    }
+                }
+            }, 50);
+        }
+
+        function updateTimerUI() {
+            const timerBar = document.getElementById('timer-bar');
+            timerBar.style.width = timeLeft + '%';
+
+            timerBar.classList.remove('warning', 'danger');
+            if (timeLeft < 30) {
+                timerBar.classList.add('danger');
+            } else if (timeLeft < 60) {
+                timerBar.classList.add('warning');
+            }
+        }
+
+        function checkRoundComplete() {
+            if (correctWordsFound >= totalCorrectWords) {
+                clearInterval(timerInterval);
+                showRoundComplete();
+            }
+        }
+
+        function showRoundComplete() {
+            const results = ['Good!', 'Great!', 'Excellent!', 'Amazing!'];
+            document.getElementById('round-result-text').textContent = results[Math.min(maxCombo, results.length - 1)];
+            document.getElementById('round-combo').textContent = combo;
+
+            document.getElementById('round-complete').classList.remove('hidden');
+        }
+
+        function nextRound() {
+            document.getElementById('round-complete').classList.add('hidden');
+
+            currentRound++;
+            if (currentRound >= gameRounds.length) {
+                showGameComplete();
+            } else {
+                combo = 0; // 콤보 리셋
+                updateUI();
+                loadRound();
+            }
+        }
+
+        function showGameComplete() {
+            clearInterval(timerInterval);
+
+            document.getElementById('final-combo').textContent = maxCombo;
+            document.getElementById('final-score').textContent = score;
+
+            document.getElementById('game-complete').classList.remove('hidden');
+
+            // 학습 완료 상태 저장 (주차별+책타입별 키 사용)
+            const bookData = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+            const week = bookData.week || 1;
+            const bookType = bookData.bookType || 'core';
+            const isReReadingMode = sessionStorage.getItem('isReReadingMode') === 'true' || bookData.isReReading;
+
+            // 다시 읽기 모드에서는 실제 진행상태를 업데이트하지 않음
+            if (!isReReadingMode) {
+                const progressKey = 'learningProgress_w' + week + '_' + bookType;
+                const progressData = JSON.parse(sessionStorage.getItem(progressKey) || '{}');
+                progressData.vocabCompleted = true;
+                progressData.vocabScore = score;
+                progressData.weekCompleted = true;
+                sessionStorage.setItem(progressKey, JSON.stringify(progressData));
+
+                // 하위 호환: 기존 키에도 저장
+                sessionStorage.setItem('learningProgress', JSON.stringify(progressData));
+            }
+
+            // 어휘챌린지 완료 플래그 설정 (홈에서 확인용 - 다시 읽기 모드에서도 필요)
+            sessionStorage.setItem('vocabJustCompleted', 'true');
+            sessionStorage.setItem('vocabCompletedWeek', week.toString());
+            sessionStorage.setItem('vocabCompletedBookType', bookType);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            showGameComplete();
+        }
+
+        function goToHome() {
+            window.location.href = 'home.html';
+        }
+
+        function exitChallenge() {
+            if (confirm('챌린지를 그만둘까요?')) {
+                window.location.href = 'home.html';
+            }
+        }
+
+        // 유틸리티
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - AI 독서 도구함</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1', paper: '#FDFBF7'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+                        'floating': '0 20px 25px -5px rgba(255, 159, 67, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        /* === 페이지 헤더 === */
+        .page-header {
+            background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 50%, #a78bfa 100%);
+            padding: 24px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 120px; height: 120px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        .page-header-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-header-desc {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 6px;
+        }
+        .ttotto-avatar {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: white;
+            padding: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .ttotto-avatar img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+        }
+
+        /* === 도구 메뉴 탭 === */
+        .tool-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 24px;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            overflow-x: auto;
+        }
+        .tool-tab {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 20px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .tool-tab:hover {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+        .tool-tab.active {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border-color: #8b5cf6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        .tool-tab i {
+            font-size: 16px;
+        }
+        .tool-tab .tab-count {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .tool-tab.active .tab-count {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* === 활동 기록 영역 === */
+        .activity-container {
+            padding: 24px;
+            background: #f9fafb;
+            min-height: calc(100vh - 200px);
+        }
+        .activity-section-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* === 활동 카드 (통합 레이아웃) === */
+        .activity-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 16px;
+            max-width: 900px;
+        }
+        .activity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        /* 왼쪽: 책 섬네일 */
+        .card-thumb {
+            width: 104px;
+            height: 143px;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            flex-shrink: 0;
+            box-shadow: 2px 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-right: 14px;
+        }
+        .card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .card-thumb i { font-size: 22px; color: #9ca3af; }
+        .card-thumb .thumb-label { font-size: 9px; font-weight: 700; color: #9ca3af; }
+
+        /* 오른쪽: 정보 + 활동 */
+        .card-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* 메타 정보 행 */
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .card-type-badge.question { background: #ede9fe; color: #7c3aed; }
+        .card-type-badge.video { background: #fce7f3; color: #db2777; }
+        .card-type-badge.debate { background: #dbeafe; color: #2563eb; }
+
+        .card-book-name {
+            font-size: 12px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-time {
+            font-size: 11px;
+            color: #b0b0b0;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        /* 활동 제목 */
+        .card-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+
+        /* === 활동 프리뷰 공통 === */
+        .card-activity {
+            margin-top: 8px;
+            border-radius: 12px;
+            overflow: hidden;
+            min-height: 90px;
+        }
+
+        /* 질문렌즈 프리뷰 */
+        .card-activity.question-type {
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid #ede9fe;
+        }
+        .q-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #7c3aed;
+        }
+        .q-answer {
+            font-size: 13.5px;
+            color: #4b5563;
+            line-height: 1.6;
+            background: rgba(255,255,255,0.7);
+            padding: 10px 12px;
+            border-radius: 8px;
+            min-height: 40px;
+        }
+
+        /* 영상 리텔링 프리뷰 */
+        .card-activity.video-type {
+            display: flex;
+            flex-direction: row;
+            gap: 0;
+            background: #f9fafb;
+            border: 1px solid #fce7f3;
+        }
+        .video-mini-thumb {
+            position: relative;
+            width: 150px;
+            height: 100px;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px 0 0 10px;
+        }
+        .video-mini-thumb img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .video-mini-thumb .play-icon {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.3);
+        }
+        .video-mini-thumb .play-icon i {
+            width: 36px; height: 36px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: #ec4899; padding-left: 2px;
+        }
+        .video-mini-thumb .duration {
+            position: absolute; bottom: 6px; right: 6px;
+            background: rgba(0,0,0,0.7); color: white;
+            padding: 2px 8px; border-radius: 4px;
+            font-size: 11px; font-weight: 600;
+        }
+        .video-mini-info {
+            padding: 12px 16px;
+            display: flex; flex-direction: column; justify-content: center;
+            flex: 1;
+        }
+        .video-mini-info .scene-label {
+            font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 2px;
+        }
+        .video-mini-info .scene-desc {
+            font-size: 12px; color: #9ca3af;
+        }
+
+        /* 독서토론 프리뷰 */
+        .card-activity.debate-type {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid #dbeafe;
+        }
+        .d-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #2563eb;
+        }
+        .d-opinion {
+            font-size: 13.5px;
+            color: #4b5563;
+            line-height: 1.6;
+            background: rgba(255,255,255,0.7);
+            padding: 10px 12px;
+            border-radius: 8px;
+            min-height: 40px;
+        }
+
+        /* === 빈 상태 === */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .empty-state-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+        .empty-state-desc {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .empty-state-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .empty-state-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        /* === 모바일 반응형 (768px 이하) === */
+        @media (max-width: 768px) {
+            .activity-card {
+                padding: 14px;
+                gap: 12px;
+            }
+            .card-thumb {
+                width: 83px;
+                height: 114px;
+            }
+            .card-title {
+                font-size: 14px;
+            }
+            .card-activity.video-type {
+                flex-direction: column;
+            }
+            .video-mini-thumb {
+                width: 100%;
+                height: 120px;
+                border-radius: 10px 10px 0 0;
+            }
+        }
+
+        /* === 새 활동 시작 버튼 === */
+        .new-activity-fab {
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            font-size: 24px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .new-activity-fab:hover {
+            transform: scale(1.1);
+        }
+
+        /* === 새 활동 시작 모달 === */
+        .new-activity-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 0;
+        }
+        .new-activity-modal-content {
+            background: white;
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUpModal 0.3s ease;
+        }
+        @keyframes slideUpModal {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 2px;
+            margin: 0 auto 20px;
+        }
+        .modal-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #374151;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .modal-desc {
+            font-size: 14px;
+            color: #9ca3af;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .tool-option {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            border: 2px solid #f0f0f0;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tool-option:hover {
+            border-color: #8b5cf6;
+            background: #f5f3ff;
+        }
+        .tool-option-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .tool-option-info {
+            flex: 1;
+        }
+        .tool-option-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        .tool-option-desc {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body class="bg-white font-sans text-gray-800 h-screen overflow-hidden">
+    <!-- 모바일 햄버거 버튼 -->
+    <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars text-gray-600 text-lg"></i>
+    </button>
+
+    <!-- 사이드바 오버레이 -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="flex w-full h-full">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content -->
+        <main class="flex-1 h-full overflow-y-auto">
+            <!-- 페이지 헤더 -->
+            <div class="page-header">
+                <div class="flex items-center gap-16px">
+                    <div class="ttotto-avatar">
+                        <img src="../img/EHEH.png" alt="또또" onerror="this.parentElement.innerHTML='🐿️'">
+                    </div>
+                    <div style="margin-left:12px;">
+                        <div class="page-header-title">
+                            AI 독서 도구함
+                        </div>
+                        <div class="page-header-desc">
+                            또또와 함께한 독서 활동을 모아봐요
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 도구 메뉴 탭 -->
+            <div class="tool-tabs" id="tool-tabs">
+                <button class="tool-tab active" data-tool="all" onclick="filterActivities('all')">
+                    <i class="fa-solid fa-layer-group"></i>
+                    전체
+                    <span class="tab-count" id="count-all">12</span>
+                </button>
+                <button class="tool-tab" data-tool="question" onclick="filterActivities('question')">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    질문렌즈
+                    <span class="tab-count" id="count-question">5</span>
+                </button>
+                <button class="tool-tab" data-tool="video" onclick="filterActivities('video')">
+                    <i class="fa-solid fa-video"></i>
+                    영상리텔링
+                    <span class="tab-count" id="count-video">4</span>
+                </button>
+                <button class="tool-tab" data-tool="debate" onclick="filterActivities('debate')">
+                    <i class="fa-solid fa-comments"></i>
+                    독서토론
+                    <span class="tab-count" id="count-debate">3</span>
+                </button>
+            </div>
+
+            <!-- 활동 기록 영역 -->
+            <div class="activity-container" id="activity-container">
+                <!-- JS로 렌더링 -->
+            </div>
+
+            <!-- 새 활동 시작 FAB -->
+            <button class="new-activity-fab" onclick="showNewActivityModal()">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+        </main>
+    </div>
+
+    <!-- 새 활동 시작 모달 -->
+    <div id="new-activity-modal" class="new-activity-modal hidden" onclick="closeNewActivityModal(event)">
+        <div class="new-activity-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-handle"></div>
+            <div class="modal-title">새 활동 시작하기</div>
+            <div class="modal-desc">어떤 독서 도구를 사용할까요?</div>
+
+            <div class="tool-option" onclick="startNewActivity('question')">
+                <div class="tool-option-icon" style="background:#ede9fe; color:#8b5cf6;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div class="tool-option-info">
+                    <div class="tool-option-title">질문렌즈</div>
+                    <div class="tool-option-desc">책 속에서 궁금한 걸 찾아보자!</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-gray-300"></i>
+            </div>
+
+            <div class="tool-option" onclick="startNewActivity('video')">
+                <div class="tool-option-icon" style="background:#fce7f3; color:#ec4899;">
+                    <i class="fa-solid fa-video"></i>
+                </div>
+                <div class="tool-option-info">
+                    <div class="tool-option-title">영상 리텔링</div>
+                    <div class="tool-option-desc">이야기를 영상으로 다시 말해보자!</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-gray-300"></i>
+            </div>
+
+            <div class="tool-option" onclick="startNewActivity('debate')">
+                <div class="tool-option-icon" style="background:#dbeafe; color:#3b82f6;">
+                    <i class="fa-solid fa-comments"></i>
+                </div>
+                <div class="tool-option-info">
+                    <div class="tool-option-title">독서토론</div>
+                    <div class="tool-option-desc">책에 대해 토론해보자!</div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-gray-300"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal Container -->
+    <div id="logout-modal-container"></div>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script src="../js/sidebar.js"></script>
+
+    <script>
+    // === 책 이미지 매핑 ===
+    const bookImageMap = {
+        '오즈의 마법사': '../img/book1.jpg',
+        '약속은 즐거워': '../img/book2.jpg',
+        '숭숭이와 나': '../img/book3.jpg',
+        '빨간머리 앤': '../img/book4.jpg'
+    };
+
+    // === 활동 데이터 (샘플) ===
+    const activityData = [
+        {
+            id: 1, type: 'question', book: '오즈의 마법사', bookEmoji: '🌪️',
+            title: '도로시는 왜 에메랄드 성으로 갔을까?',
+            preview: '도로시가 집에 가려면 오즈의 마법사를 만나야 한대요. 그래서 노란 벽돌길을 따라 에메랄드 성으로 갔어요!',
+            questionCard: '누구일까?',
+            questionIcon: '❓',
+            date: '2024-01-15 14:30'
+        },
+        {
+            id: 2, type: 'video', book: '오즈의 마법사', bookEmoji: '🌪️',
+            title: '도로시의 모험 이야기',
+            preview: '1분 32초',
+            thumbnailText: '▶',
+            videoThumbnail: '../img/video-default.svg',
+            videoScene: '평화로운 숲속',
+            date: '2024-01-15 15:00'
+        },
+        {
+            id: 3, type: 'debate', book: '오즈의 마법사', bookEmoji: '🌪️',
+            title: '허수아비에게 정말 뇌가 없었을까?',
+            preview: '허수아비는 뇌가 없다고 했지만, 항상 똑똑한 생각을 했어요. 마음이 중요한 것 같아요!',
+            debateCard: '나눠줘야 해!',
+            debateIcon: '💭',
+            date: '2024-01-14 16:20'
+        },
+        {
+            id: 4, type: 'question', book: '약속은 즐거워', bookEmoji: '🤝',
+            title: '약속을 지키면 왜 좋을까?',
+            preview: '친구랑 약속을 지키면 믿음이 생기고, 다음에도 같이 놀 수 있어요!',
+            questionCard: '왜 그럴까?',
+            questionIcon: '🤔',
+            date: '2024-01-13 10:15'
+        },
+        {
+            id: 5, type: 'video', book: '약속은 즐거워', bookEmoji: '🤝',
+            title: '나의 약속 이야기',
+            preview: '2분 15초',
+            thumbnailText: '▶',
+            videoThumbnail: '../img/video-default.svg',
+            videoScene: '친구와의 약속',
+            date: '2024-01-13 11:00'
+        },
+        {
+            id: 6, type: 'question', book: '숭숭이와 나', bookEmoji: '🐾',
+            title: '숭숭이는 어떤 친구일까?',
+            preview: '숭숭이는 나만 알아보는 특별한 친구예요. 항상 내 옆에 있어줘요.',
+            questionCard: '어떤 걸까?',
+            questionIcon: '🔍',
+            date: '2024-01-12 09:30'
+        },
+        {
+            id: 7, type: 'debate', book: '숭숭이와 나', bookEmoji: '🐾',
+            title: '상상 친구가 있어도 될까?',
+            preview: '상상 친구가 있으면 외롭지 않고, 마음이 편해져요. 하지만 진짜 친구도 중요해요!',
+            debateCard: '괜찮아요!',
+            debateIcon: '👍',
+            date: '2024-01-11 14:45'
+        },
+        {
+            id: 8, type: 'video', book: '빨간머리 앤', bookEmoji: '👧',
+            title: '앤과 다이애나의 우정',
+            preview: '3분 05초',
+            thumbnailText: '▶',
+            videoThumbnail: '../img/video-default.svg',
+            videoScene: '우정의 순간',
+            date: '2024-01-10 16:00'
+        },
+        {
+            id: 9, type: 'question', book: '빨간머리 앤', bookEmoji: '👧',
+            title: '앤은 왜 상상을 좋아할까?',
+            preview: '앤은 혼자 있을 때가 많았는데, 상상하면 외롭지 않았대요. 상상은 마음의 친구 같아요!',
+            questionCard: '왜일까?',
+            questionIcon: '❓',
+            date: '2024-01-10 15:20'
+        },
+        {
+            id: 10, type: 'debate', book: '빨간머리 앤', bookEmoji: '👧',
+            title: '실수해도 괜찮을까?',
+            preview: '앤은 실수를 많이 했지만, 그때마다 배우고 더 좋은 사람이 됐어요!',
+            debateCard: '다시 해볼게요!',
+            debateIcon: '💪',
+            date: '2024-01-09 11:30'
+        },
+        {
+            id: 11, type: 'question', book: '오즈의 마법사', bookEmoji: '🌪️',
+            title: '양철 나무꾼의 소원은?',
+            preview: '양철 나무꾼은 심장을 원했어요. 사랑을 느끼고 싶었대요!',
+            questionCard: '무엇일까?',
+            questionIcon: '💭',
+            date: '2024-01-08 14:00'
+        },
+        {
+            id: 12, type: 'video', book: '약속은 즐거워', bookEmoji: '🤝',
+            title: '친구와 지킨 약속',
+            preview: '1분 48초',
+            thumbnailText: '▶',
+            videoThumbnail: '../img/video-default.svg',
+            videoScene: '약속의 장면',
+            date: '2024-01-07 10:30'
+        }
+    ];
+
+    let currentFilter = 'all';
+
+    // === 활동 목록 렌더링 ===
+    function renderActivities() {
+        const container = document.getElementById('activity-container');
+        const filtered = currentFilter === 'all'
+            ? activityData
+            : activityData.filter(a => a.type === currentFilter);
+
+        // 카운트 업데이트
+        document.getElementById('count-all').textContent = activityData.length;
+        document.getElementById('count-question').textContent = activityData.filter(a => a.type === 'question').length;
+        document.getElementById('count-video').textContent = activityData.filter(a => a.type === 'video').length;
+        document.getElementById('count-debate').textContent = activityData.filter(a => a.type === 'debate').length;
+
+        if (filtered.length === 0) {
+            container.innerHTML = renderEmptyState();
+            return;
+        }
+
+        // 날짜별 그룹핑
+        const grouped = groupByDate(filtered);
+        let html = '';
+
+        for (const [dateLabel, activities] of Object.entries(grouped)) {
+            html += `<div class="activity-section-title"><i class="fa-regular fa-calendar"></i> ${dateLabel}</div>`;
+            activities.forEach(activity => {
+                html += renderActivityCard(activity);
+            });
+        }
+
+        container.innerHTML = html;
+    }
+
+    function groupByDate(activities) {
+        const groups = {};
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+        activities.forEach(a => {
+            const actDate = new Date(a.date).toDateString();
+            let label;
+            if (actDate === today) label = '오늘';
+            else if (actDate === yesterday) label = '어제';
+            else label = formatDate(a.date);
+
+            if (!groups[label]) groups[label] = [];
+            groups[label].push(a);
+        });
+
+        return groups;
+    }
+
+    function formatDate(dateStr) {
+        const d = new Date(dateStr);
+        return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+    }
+
+    function renderActivityCard(activity) {
+        const typeLabels = { question: '질문렌즈', video: '영상 리텔링', debate: '독서토론' };
+        const typeIcons = { question: 'fa-magnifying-glass', video: 'fa-video', debate: 'fa-comments' };
+
+        // 책 이미지
+        const bookImage = bookImageMap[activity.book];
+        const thumbContent = bookImage
+            ? `<img src="${bookImage}" alt="${activity.book}">`
+            : `<i class="fa-solid fa-book"></i><span class="thumb-label">BOOK</span>`;
+
+        // 시간
+        const time = activity.date.split(' ')[1];
+
+        // 활동 프리뷰
+        let activityHtml = '';
+        if (activity.type === 'question') {
+            activityHtml = `
+                <div class="card-activity question-type">
+                    <div class="q-tag">${activity.questionIcon || '❓'} ${activity.questionCard || '질문'}</div>
+                    <div class="q-answer">"${activity.preview}"</div>
+                </div>`;
+        } else if (activity.type === 'video') {
+            const videoThumb = activity.videoThumbnail || '../img/video-default.svg';
+            activityHtml = `
+                <div class="card-activity video-type">
+                    <div class="video-mini-thumb">
+                        <img src="${videoThumb}" alt="${activity.videoScene}" onerror="this.src='../img/video-default.svg'">
+                        <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                        <div class="duration">${activity.preview}</div>
+                    </div>
+                    <div class="video-mini-info">
+                        <div class="scene-label">📹 ${activity.videoScene || '영상 장면'}</div>
+                        <div class="scene-desc">영상 리텔링 완료</div>
+                    </div>
+                </div>`;
+        } else if (activity.type === 'debate') {
+            activityHtml = `
+                <div class="card-activity debate-type">
+                    <div class="d-tag">${activity.debateIcon || '💭'} ${activity.debateCard || '내 의견'}</div>
+                    <div class="d-opinion">"${activity.preview}"</div>
+                </div>`;
+        }
+
+        return `
+            <div class="activity-card" onclick="viewActivity(${activity.id})">
+                <div class="card-thumb">${thumbContent}</div>
+                <div class="card-body">
+                    <div class="card-meta">
+                        <span class="card-type-badge ${activity.type}"><i class="fa-solid ${typeIcons[activity.type]}"></i> ${typeLabels[activity.type]}</span>
+                        <span class="card-book-name">${activity.bookEmoji} ${activity.book}</span>
+                        <span class="card-time">${time}</span>
+                    </div>
+                    <div class="card-title">${activity.title}</div>
+                    ${activityHtml}
+                </div>
+            </div>`;
+    }
+
+    function renderEmptyState() {
+        const toolName = currentFilter === 'all' ? '활동' :
+                         currentFilter === 'question' ? '질문렌즈' :
+                         currentFilter === 'video' ? '영상 리텔링' : '독서토론';
+        return `
+            <div class="empty-state">
+                <div class="empty-state-icon">📚</div>
+                <div class="empty-state-title">${toolName} 기록이 없어요</div>
+                <div class="empty-state-desc">또또와 함께 새로운 활동을 시작해보세요!</div>
+                <button class="empty-state-btn" onclick="showNewActivityModal()">
+                    <i class="fa-solid fa-plus"></i>
+                    새 활동 시작하기
+                </button>
+            </div>
+        `;
+    }
+
+    // === 필터 전환 ===
+    function filterActivities(filter) {
+        currentFilter = filter;
+
+        // 탭 상태 업데이트
+        document.querySelectorAll('.tool-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tool === filter);
+        });
+
+        renderActivities();
+    }
+
+    // === 모달 관리 ===
+    function showNewActivityModal() {
+        document.getElementById('new-activity-modal').classList.remove('hidden');
+    }
+
+    function closeNewActivityModal(event) {
+        if (event && event.target === document.getElementById('new-activity-modal')) {
+            document.getElementById('new-activity-modal').classList.add('hidden');
+        } else if (!event) {
+            document.getElementById('new-activity-modal').classList.add('hidden');
+        }
+    }
+
+    // === 새 활동 시작 ===
+    function startNewActivity(tool) {
+        closeNewActivityModal();
+        sessionStorage.setItem('aiBuddyChatState', 'true');
+        sessionStorage.setItem('referrer', 'ai-buddy.html');
+
+        // 도구에 따라 통합 뷰어의 적절한 탭으로 이동
+        if (tool === 'question') {
+            // 질문렌즈는 별도 페이지 유지
+            window.location.href = 'question-lens.html';
+        } else if (tool === 'video') {
+            // 영상 리텔링 → 영상뷰어 탭
+            window.location.href = 'book-viewer-integrated.html?viewer=video';
+        } else if (tool === 'debate') {
+            // 독서토론은 별도 페이지 유지
+            window.location.href = 'debate.html';
+        }
+    }
+
+    // === 감상문 쓰기 시작 (버튼 추가용) ===
+    function startActivityTool() {
+        sessionStorage.setItem('referrer', 'ai-buddy.html');
+        // 활동툴 → 감상문쓰기 탭
+        window.location.href = 'book-viewer-integrated.html?viewer=activity';
+    }
+
+    // === 놀이학습 시작 (버튼 추가용) ===
+    function startPlayLearning() {
+        sessionStorage.setItem('referrer', 'ai-buddy.html');
+        // 놀이학습 탭
+        window.location.href = 'book-viewer-integrated.html?viewer=play';
+    }
+
+    // === 독서앨범 보기 (버튼 추가용) ===
+    function viewReadingAlbum() {
+        sessionStorage.setItem('referrer', 'ai-buddy.html');
+        // 독서앨범 탭
+        window.location.href = 'book-viewer-integrated.html?viewer=album';
+    }
+
+    // === 활동 상세 보기 ===
+    function viewActivity(id) {
+        const activity = activityData.find(a => a.id === id);
+        if (!activity) return;
+        sessionStorage.setItem('aiBuddyChatState', 'true');
+
+        if (activity.type === 'question') {
+            sessionStorage.setItem('questionLensRecord', JSON.stringify(activity));
+            window.location.href = 'question-lens.html';
+        } else if (activity.type === 'video') {
+            window.location.href = 'video-retelling.html';
+        } else {
+            window.location.href = 'debate.html';
+        }
+    }
+
+    // === Init ===
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSidebar('ai-buddy');
+        loadLogoutModal();
+        renderActivities();
+    });
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

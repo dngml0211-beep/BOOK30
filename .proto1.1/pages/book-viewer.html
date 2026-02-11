@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북클럽 3.0 - 도서 뷰어</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#FEF3C7', primary: '#FF9F43', dark: '#F368E0', secondary: '#54a0ff', green: '#1dd1a1',
+                            cream: '#FFFBEB', peach: '#FFF7ED', mint: '#ECFDF5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+
+        body {
+            background: linear-gradient(180deg, #FFF7ED 0%, #FEF3C7 50%, #ECFDF5 100%);
+        }
+
+        .book-page {
+            background: linear-gradient(135deg, #fffef9 0%, #fffbeb 50%, #fff9e6 100%);
+            box-shadow:
+                0 4px 20px rgba(255, 159, 67, 0.15),
+                0 0 0 1px rgba(255, 159, 67, 0.1);
+        }
+
+        /* 단면 보기 */
+        .book-page.view-single .page-right {
+            display: none;
+        }
+        .book-page.view-single .page-left {
+            border-right: none;
+        }
+        .book-page.view-single .center-fold {
+            display: none;
+        }
+
+        /* 채워보기 */
+        .book-page.view-fill {
+            max-width: 100%;
+            height: 100%;
+        }
+        .book-page.view-fill .page-content {
+            font-size: 1.3em;
+        }
+
+        .toolbar-btn {
+            transition: all 0.2s ease;
+        }
+        .toolbar-btn:hover {
+            transform: scale(1.05);
+        }
+        .toolbar-btn:active {
+            transform: scale(0.95);
+        }
+        .toolbar-btn.active {
+            background: linear-gradient(135deg, #FF9F43 0%, #F368E0 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 159, 67, 0.4);
+        }
+
+        .page-nav-btn {
+            transition: all 0.3s ease;
+        }
+        .page-nav-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(255, 159, 67, 0.3);
+        }
+
+        .panel-card {
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .side-menu {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .recording-pulse {
+            animation: pulse 1s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .bounce-soft {
+            animation: bounceSoft 2s ease-in-out infinite;
+        }
+        @keyframes bounceSoft {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 사이드 메뉴 토글 버튼 */
+        .side-toggle-btn {
+            transition: all 0.3s ease;
+        }
+        .side-toggle-btn:hover {
+            transform: translateX(-4px);
+        }
+
+        /* 화면 잠금 오버레이 */
+        .lock-overlay {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 h-screen overflow-hidden select-none">
+    <!-- Top Header -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-orange-100 shadow-sm">
+        <div class="flex items-center justify-between px-4 py-3">
+            <!-- Left: Back & Book Info -->
+            <div class="flex items-center gap-3">
+                <button onclick="goBack()" class="w-10 h-10 bg-orange-50 hover:bg-orange-100 rounded-xl flex items-center justify-center text-brand-primary transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📖</span>
+                    <div>
+                        <h1 class="font-noto text-base text-gray-800" id="book-title">마법사의 물약</h1>
+                        <p class="text-xs text-gray-400">3장. 신비로운 숲속</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Page Progress -->
+            <div class="hidden md:flex items-center gap-3 bg-gradient-to-r from-orange-50 to-amber-50 px-4 py-2 rounded-full border border-orange-100">
+                <span class="text-2xl">🐿️</span>
+                <div class="flex items-center gap-2">
+                    <span class="font-noto text-brand-primary"><span id="current-page">1</span></span>
+                    <span class="text-gray-300">/</span>
+                    <span class="text-gray-500"><span id="total-pages">32</span></span>
+                </div>
+                <div class="w-20 h-2 bg-orange-100 rounded-full overflow-hidden">
+                    <div id="progress-fill" class="h-full bg-gradient-to-r from-brand-primary to-pink-400 rounded-full transition-all" style="width: 3%"></div>
+                </div>
+            </div>
+
+            <!-- Right: Lock, Bookmark, Helper, Activity -->
+            <div class="flex items-center gap-2">
+                <!-- 화면 잠금 -->
+                <button onclick="toggleScreenLock()" class="toolbar-btn w-10 h-10 bg-gray-50 hover:bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 transition-colors" id="lock-btn" title="화면 잠금">
+                    <i class="fa-solid fa-lock-open text-lg"></i>
+                </button>
+                <!-- 하트/북마크 -->
+                <button onclick="toggleBookmark()" class="toolbar-btn w-10 h-10 bg-pink-50 hover:bg-pink-100 rounded-xl flex items-center justify-center text-pink-400 transition-colors" id="bookmark-btn" title="좋아요">
+                    <i class="fa-regular fa-heart text-lg"></i>
+                </button>
+                <!-- 독서 도우미 드롭다운 -->
+                <div class="relative" id="helper-dropdown-wrapper">
+                    <button onclick="toggleHelperDropdown()" class="toolbar-btn w-10 h-10 bg-amber-50 hover:bg-amber-100 rounded-xl flex items-center justify-center text-amber-500 transition-colors" id="helper-dropdown-btn" title="독서 도우미">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    </button>
+                    <!-- 독서 도우미 메뉴 -->
+                    <div id="helper-dropdown" class="hidden absolute right-0 top-12 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 min-w-[160px] z-50 side-menu">
+                        <p class="text-[10px] text-gray-400 font-medium px-3 py-1 border-b border-gray-100 mb-1">독서 도우미</p>
+                        <button onclick="toggleRecording()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 transition-colors group" id="record-btn">
+                            <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-lg group-hover:bg-red-200">🎙️</div>
+                            <span class="text-sm text-gray-700">녹음</span>
+                        </button>
+                        <button onclick="openDictionary()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 transition-colors group">
+                            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-lg group-hover:bg-amber-200">📚</div>
+                            <span class="text-sm text-gray-700">사전</span>
+                        </button>
+                        <button onclick="saveFullScreen()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors group">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-lg group-hover:bg-blue-200">📸</div>
+                            <span class="text-sm text-gray-700">전체화면 저장</span>
+                        </button>
+                        <button onclick="saveCustom()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-pink-50 transition-colors group">
+                            <div class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center text-lg group-hover:bg-pink-200">💖</div>
+                            <span class="text-sm text-gray-700">내마음대로 저장</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- 독서 활동 드롭다운 -->
+                <div class="relative" id="activity-dropdown-wrapper">
+                    <button onclick="toggleActivityDropdown()" class="toolbar-btn w-10 h-10 bg-violet-50 hover:bg-violet-100 rounded-xl flex items-center justify-center text-violet-500 transition-colors" id="activity-dropdown-btn" title="독서 활동">
+                        <i class="fa-solid fa-puzzle-piece text-lg"></i>
+                    </button>
+                    <!-- 독서 활동 메뉴 -->
+                    <div id="activity-dropdown" class="hidden absolute right-0 top-12 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 min-w-[150px] z-50 side-menu">
+                        <p class="text-[10px] text-gray-400 font-medium px-3 py-1 border-b border-gray-100 mb-1">독서 활동</p>
+                        <button onclick="openReview()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-green-50 transition-colors group">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-lg group-hover:bg-green-200">✏️</div>
+                            <span class="text-sm text-gray-700">감상문</span>
+                        </button>
+                        <button onclick="openQuiz()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 transition-colors group">
+                            <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-lg group-hover:bg-amber-200">❓</div>
+                            <span class="text-sm text-gray-700">독후퀴즈</span>
+                        </button>
+                        <button onclick="openPairBook()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-rose-50 transition-colors group">
+                            <div class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center text-lg group-hover:bg-rose-200">👯</div>
+                            <span class="text-sm text-gray-700">짝꿍책</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Book View -->
+    <main class="h-[calc(100vh-140px)] flex items-center justify-center px-4 py-4 relative" id="book-area">
+        <!-- Left Page Navigation -->
+        <button onclick="prevPage(event)" class="page-nav-btn absolute left-4 z-20 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-brand-primary border-2 border-orange-100 hover:border-brand-primary">
+            <i class="fa-solid fa-chevron-left text-lg"></i>
+        </button>
+
+        <!-- Book Container -->
+        <div class="book-page w-full max-w-4xl h-full rounded-3xl overflow-hidden flex relative" id="book-container">
+            <!-- Left Page -->
+            <div class="page-left flex-1 p-6 md:p-10 border-r-2 border-dashed border-orange-100 relative" id="left-page">
+                <div class="h-full flex flex-col">
+                    <div class="flex-1 flex items-center justify-center page-content">
+                        <div class="text-center">
+                            <div class="text-7xl md:text-8xl mb-6 bounce-soft">🧙‍♂️</div>
+                            <p class="text-gray-700 text-lg md:text-xl leading-relaxed max-w-sm font-medium">
+                                마법사는 깊은 숲속으로<br>
+                                물약 재료를 찾아 떠났어요.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <span class="inline-block bg-orange-100 text-brand-primary font-noto px-3 py-1 rounded-full text-sm" id="left-page-num">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Page -->
+            <div class="page-right flex-1 p-6 md:p-10 relative" id="right-page">
+                <div class="h-full flex flex-col">
+                    <div class="flex-1 flex items-center justify-center page-content">
+                        <div class="text-center">
+                            <div class="text-6xl md:text-7xl mb-6 flex justify-center gap-2">
+                                <span class="bounce-soft" style="animation-delay: 0s">🌳</span>
+                                <span class="bounce-soft" style="animation-delay: 0.2s">🌲</span>
+                                <span class="bounce-soft" style="animation-delay: 0.4s">🌳</span>
+                            </div>
+                            <p class="text-gray-700 text-lg md:text-xl leading-relaxed max-w-sm font-medium">
+                                "파란 꽃잎, 반짝이는 이슬,<br>
+                                무지개빛 나비 날개가 필요해!"
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <span class="inline-block bg-orange-100 text-brand-primary font-noto px-3 py-1 rounded-full text-sm" id="right-page-num">2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Fold -->
+            <div class="center-fold absolute top-0 bottom-0 left-1/2 w-4 -translate-x-1/2 bg-gradient-to-r from-orange-50 via-orange-100/50 to-orange-50 pointer-events-none"></div>
+        </div>
+
+        <!-- Right Page Navigation -->
+        <button onclick="nextPage(event)" class="page-nav-btn absolute right-4 z-20 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-brand-primary border-2 border-orange-100 hover:border-brand-primary">
+            <i class="fa-solid fa-chevron-right text-lg"></i>
+        </button>
+
+    </main>
+
+    <!-- ===== Category 1: 뷰 컨트롤 (하단 툴바) ===== -->
+    <footer class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-orange-100 shadow-lg" id="bottom-toolbar">
+        <div class="px-4 py-3">
+            <div class="flex items-center justify-center gap-2 md:gap-4">
+                <!-- 보기방식 -->
+                <button onclick="toggleViewMode()" class="toolbar-btn flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 min-w-[60px]" id="view-mode-btn">
+                    <i class="fa-solid fa-eye text-purple-500 text-lg"></i>
+                    <span class="text-[10px] text-gray-600 font-medium" id="view-mode-label">기본</span>
+                </button>
+
+                <!-- 확대보기 -->
+                <button onclick="toggleZoom()" class="toolbar-btn flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 min-w-[60px]" id="zoom-btn">
+                    <i class="fa-solid fa-magnifying-glass-plus text-indigo-500 text-lg"></i>
+                    <span class="text-[10px] text-gray-600 font-medium">확대</span>
+                </button>
+
+                <!-- 펼쳐보기 -->
+                <button onclick="toggleSpread()" class="toolbar-btn flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-violet-50 hover:bg-violet-100 min-w-[60px]" id="spread-btn">
+                    <i class="fa-solid fa-book-open text-violet-500 text-lg"></i>
+                    <span class="text-[10px] text-gray-600 font-medium">펼침</span>
+                </button>
+
+                <!-- 구분선 -->
+                <div class="w-px h-10 bg-gray-200 mx-1"></div>
+
+                <!-- 자동넘김 -->
+                <button onclick="toggleAutoPlay()" class="toolbar-btn flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 min-w-[60px]" id="autoplay-btn">
+                    <i class="fa-solid fa-play text-cyan-500 text-lg" id="autoplay-icon"></i>
+                    <span class="text-[10px] text-gray-600 font-medium">자동</span>
+                </button>
+
+                <!-- 오디오 제어 -->
+                <button onclick="toggleAudioControl()" class="toolbar-btn flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 min-w-[60px]" id="audio-btn">
+                    <i class="fa-solid fa-volume-high text-orange-500 text-lg"></i>
+                    <span class="text-[10px] text-gray-600 font-medium">오디오</span>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===== Panels & Modals ===== -->
+
+    <!-- Recording Indicator -->
+    <div id="recording-indicator" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-white border-2 border-red-300 text-red-500 px-6 py-3 rounded-full flex items-center gap-3 shadow-xl">
+        <div class="w-4 h-4 bg-red-500 rounded-full recording-pulse"></div>
+        <span class="font-noto text-lg">녹음 중!</span>
+        <span id="recording-time" class="font-bold">00:00</span>
+        <button onclick="stopRecording()" class="ml-2 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center hover:bg-red-200">
+            <i class="fa-solid fa-stop text-red-500"></i>
+        </button>
+    </div>
+
+    <!-- View Mode Panel -->
+    <div id="view-mode-panel" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] bg-white rounded-3xl p-5 shadow-2xl border-2 border-purple-100 panel-card">
+        <p class="text-center font-noto text-purple-600 mb-4">👀 보기 방식 선택</p>
+        <div class="flex gap-3">
+            <button onclick="setViewMode('default')" class="view-mode-btn flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors border-2 border-purple-300" data-mode="default">
+                <span class="text-3xl">📖</span>
+                <span class="text-sm font-medium text-gray-700">기본</span>
+                <span class="text-[10px] text-gray-400">양면 보기</span>
+            </button>
+            <button onclick="setViewMode('single')" class="view-mode-btn flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors border-2 border-transparent" data-mode="single">
+                <span class="text-3xl">📄</span>
+                <span class="text-sm font-medium text-gray-700">단면</span>
+                <span class="text-[10px] text-gray-400">한 페이지씩</span>
+            </button>
+            <button onclick="setViewMode('fill')" class="view-mode-btn flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors border-2 border-transparent" data-mode="fill">
+                <span class="text-3xl">🖼️</span>
+                <span class="text-sm font-medium text-gray-700">채워보기</span>
+                <span class="text-[10px] text-gray-400">화면 가득</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Audio Control Panel -->
+    <div id="audio-control-panel" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] bg-white rounded-3xl p-5 shadow-2xl border-2 border-orange-100 panel-card min-w-[320px]">
+        <p class="text-center font-noto text-orange-500 mb-4">🎵 오디오 제어</p>
+
+        <!-- 재생 컨트롤 -->
+        <div class="flex items-center justify-center gap-4 mb-5">
+            <button onclick="audioRewind()" class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center hover:bg-orange-100 transition-colors">
+                <i class="fa-solid fa-backward text-orange-500"></i>
+            </button>
+            <button onclick="toggleAudioPlay()" class="w-16 h-16 bg-gradient-to-br from-brand-primary to-pink-400 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all" id="audio-play-btn">
+                <i class="fa-solid fa-play text-white text-xl" id="audio-play-icon"></i>
+            </button>
+            <button onclick="audioForward()" class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center hover:bg-orange-100 transition-colors">
+                <i class="fa-solid fa-forward text-orange-500"></i>
+            </button>
+        </div>
+
+        <!-- 속도 조절 -->
+        <div class="flex items-center justify-center gap-2 mb-4">
+            <button onclick="setAudioSpeed(0.75)" class="audio-speed-btn px-4 py-2 bg-gray-100 rounded-full text-sm hover:bg-gray-200 transition-colors" data-speed="0.75">
+                🐢 느리게
+            </button>
+            <button onclick="setAudioSpeed(1)" class="audio-speed-btn px-4 py-2 bg-orange-100 text-brand-primary rounded-full text-sm font-bold border-2 border-orange-200" data-speed="1">
+                보통
+            </button>
+            <button onclick="setAudioSpeed(1.5)" class="audio-speed-btn px-4 py-2 bg-gray-100 rounded-full text-sm hover:bg-gray-200 transition-colors" data-speed="1.5">
+                🐰 빠르게
+            </button>
+        </div>
+
+        <!-- 반복 재생 -->
+        <button onclick="toggleRepeat()" class="w-full py-3 bg-pink-50 text-pink-500 rounded-xl font-medium hover:bg-pink-100 transition-colors flex items-center justify-center gap-2" id="repeat-btn">
+            <i class="fa-solid fa-repeat"></i>
+            <span>반복 재생</span>
+        </button>
+    </div>
+
+    <!-- Dictionary Panel -->
+    <div id="dictionary-panel" class="hidden fixed inset-x-4 bottom-20 md:inset-auto md:bottom-24 md:left-1/2 md:-translate-x-1/2 z-[100] bg-white rounded-3xl p-5 shadow-2xl border-2 border-amber-100 panel-card max-w-md mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">📚</span>
+                <h3 class="font-noto text-lg text-amber-600">낱말 사전</h3>
+            </div>
+            <button onclick="closeDictionary()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="relative mb-4">
+            <input type="text" placeholder="찾고 싶은 낱말을 써보세요!" class="w-full h-12 bg-amber-50 rounded-2xl px-4 pr-12 text-gray-800 outline-none focus:ring-2 focus:ring-amber-300 border border-amber-100">
+            <button class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500">
+                <i class="fa-solid fa-search"></i>
+            </button>
+        </div>
+        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border border-amber-100">
+            <p class="font-noto text-lg text-gray-800 mb-2">🧪 물약 (物藥)</p>
+            <p class="text-gray-600 mb-3">액체로 된 약이에요. 마시거나 바르는 데 써요!</p>
+            <div class="bg-white rounded-xl p-3 border border-amber-100">
+                <p class="text-sm text-gray-500">📝 예문</p>
+                <p class="text-gray-700">"마법사가 신비한 <strong class="text-brand-primary">물약</strong>을 만들었어요."</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Panel -->
+    <div id="review-panel" class="hidden fixed inset-4 z-[100] bg-white rounded-3xl p-6 shadow-2xl border-2 border-green-100 overflow-auto panel-card">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">✏️</span>
+                <h3 class="font-noto text-xl text-green-600">감상문 쓰기</h3>
+            </div>
+            <button onclick="closeReview()" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="mb-4 bg-green-50 rounded-2xl p-4 flex items-center gap-3">
+            <span class="text-3xl">📖</span>
+            <div>
+                <p class="font-noto text-gray-800">마법사의 물약</p>
+                <p class="text-sm text-gray-500">3장. 신비로운 숲속</p>
+            </div>
+        </div>
+        <div class="mb-4">
+            <p class="text-sm text-gray-500 mb-2">💭 이 장면을 읽고 어떤 생각이 들었나요?</p>
+            <textarea placeholder="자유롭게 써보세요! 그림을 그려도 좋아요~" class="w-full h-48 bg-green-50 rounded-2xl p-4 text-gray-800 outline-none focus:ring-2 focus:ring-green-300 resize-none border border-green-100"></textarea>
+        </div>
+        <div class="flex gap-3">
+            <button class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-2xl font-noto hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i> 임시저장
+            </button>
+            <button class="flex-1 py-3 bg-gradient-to-r from-green-400 to-emerald-400 text-white rounded-2xl font-noto hover:from-green-500 hover:to-emerald-500 transition-colors flex items-center justify-center gap-2 shadow-lg">
+                <i class="fa-solid fa-check"></i> 저장하기
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen Lock Overlay -->
+    <div id="lock-overlay" class="hidden fixed inset-0 z-[200] lock-overlay flex items-center justify-center">
+        <div class="text-center text-white">
+            <div class="text-6xl mb-4">🔒</div>
+            <p class="font-noto text-2xl mb-2">화면이 잠겼어요</p>
+            <p class="text-white/70 mb-6">해제하려면 잠금 버튼을 길게 눌러주세요</p>
+            <button onclick="unlockScreen()" class="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-full text-white font-medium transition-colors border border-white/30">
+                <i class="fa-solid fa-lock-open mr-2"></i>잠금 해제
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== 완독 축하 모달 ===== -->
+    <div id="completion-modal" class="hidden fixed inset-0 z-[300] bg-gradient-to-br from-brand-primary via-pink-500 to-purple-600 flex items-center justify-center">
+        <!-- 배경 파티클 효과 -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="confetti confetti-1">🎉</div>
+            <div class="confetti confetti-2">⭐</div>
+            <div class="confetti confetti-3">🌟</div>
+            <div class="confetti confetti-4">✨</div>
+            <div class="confetti confetti-5">🎊</div>
+            <div class="confetti confetti-6">💫</div>
+            <div class="confetti confetti-7">🎉</div>
+            <div class="confetti confetti-8">⭐</div>
+        </div>
+
+        <div class="text-center relative z-10 px-6">
+            <!-- 성취 뱃지 -->
+            <div class="completion-badge w-40 h-40 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-2xl">
+                <div class="text-7xl bounce-celebration">📖</div>
+            </div>
+
+            <!-- 축하 메시지 -->
+            <h2 class="font-noto text-4xl text-white mb-3 drop-shadow-lg slide-up">
+                책을 다 읽었어요!
+            </h2>
+            <p class="text-white/90 text-xl mb-2 slide-up" style="animation-delay: 0.1s">
+                <span id="completed-book-title" class="font-bold">마법사의 물약</span>
+            </p>
+            <p class="text-white/80 text-lg mb-8 slide-up" style="animation-delay: 0.2s">
+                정말 대단해요! 🎉
+            </p>
+
+            <!-- 획득 보상 -->
+            <div class="flex items-center justify-center gap-4 mb-8 slide-up" style="animation-delay: 0.3s">
+                <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/30">
+                    <span class="text-2xl mr-2">⭐</span>
+                    <span class="text-white font-noto text-xl">+50 별</span>
+                </div>
+                <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/30">
+                    <span class="text-2xl mr-2">🏅</span>
+                    <span class="text-white font-noto text-xl">완독 뱃지</span>
+                </div>
+            </div>
+
+            <!-- 다음 단계 안내 -->
+            <div class="bg-white/95 rounded-3xl p-6 max-w-sm mx-auto shadow-2xl slide-up" style="animation-delay: 0.4s">
+                <p class="text-gray-600 text-sm mb-3">다음 단계로 넘어갈까요?</p>
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-2xl">❓</div>
+                    <div class="text-left">
+                        <p class="font-noto text-lg text-gray-800">독후퀴즈</p>
+                        <p class="text-xs text-gray-500">책 내용을 확인해봐요!</p>
+                    </div>
+                </div>
+                <button onclick="goToQuiz()" class="w-full py-4 bg-gradient-to-r from-brand-primary to-pink-500 text-white rounded-2xl font-noto text-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 btn-3d">
+                    <span>독후퀴즈 풀러가기</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- 나중에 하기 -->
+            <button onclick="skipQuiz()" class="mt-4 text-white/70 hover:text-white text-sm underline slide-up" style="animation-delay: 0.5s">
+                나중에 할게요
+            </button>
+        </div>
+    </div>
+
+    <style>
+        /* 완독 모달 애니메이션 */
+        .completion-badge {
+            animation: badgePop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .bounce-celebration {
+            animation: bounceCelebration 1s ease-in-out infinite;
+        }
+        @keyframes bounceCelebration {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .confetti {
+            position: absolute;
+            font-size: 2rem;
+            animation: confettiFall 3s ease-in-out infinite;
+        }
+        .confetti-1 { left: 10%; animation-delay: 0s; }
+        .confetti-2 { left: 25%; animation-delay: 0.5s; }
+        .confetti-3 { left: 40%; animation-delay: 1s; }
+        .confetti-4 { left: 55%; animation-delay: 0.3s; }
+        .confetti-5 { left: 70%; animation-delay: 0.8s; }
+        .confetti-6 { left: 85%; animation-delay: 0.2s; }
+        .confetti-7 { left: 15%; animation-delay: 1.2s; }
+        .confetti-8 { left: 80%; animation-delay: 0.7s; }
+
+        @keyframes confettiFall {
+            0% { top: -10%; opacity: 1; transform: rotate(0deg); }
+            100% { top: 110%; opacity: 0; transform: rotate(720deg); }
+        }
+
+        .btn-3d {
+            box-shadow: 0 6px 0 #c2410c, 0 8px 15px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+            transition: all 0.1s;
+        }
+        .btn-3d:active {
+            box-shadow: 0 2px 0 #c2410c, 0 4px 8px rgba(0,0,0,0.2);
+            transform: translateY(2px);
+        }
+    </style>
+
+    <!-- Overlay for panels -->
+    <div id="panel-overlay" class="hidden fixed inset-0 z-[90] bg-black/30 backdrop-blur-sm" onclick="closeAllPanels()"></div>
+
+    <!-- Scripts -->
+    <script src="../js/common.js"></script>
+    <script>
+        // ===== 페이지별 콘텐츠 데이터 =====
+        const bookPages = [
+            { emoji: '🧙‍♂️', text: '마법사는 깊은 숲속으로<br>물약 재료를 찾아 떠났어요.' },
+            { emoji: '🌳🌲🌳', text: '"파란 꽃잎, 반짝이는 이슬,<br>무지개빛 나비 날개가 필요해!"' },
+            { emoji: '🦋', text: '숲속 깊은 곳에서<br>무지개빛 나비 한 마리가 날아왔어요.' },
+            { emoji: '📖', text: '이렇게 마법사의 물약 이야기는<br>행복하게 끝이 났답니다. 끝!' }
+        ];
+
+        // ===== State Variables =====
+        let currentPage = 1;
+        let totalPages = 4;
+        let isRecording = false;
+        let recordingInterval = null;
+        let recordingSeconds = 0;
+        let isAutoPlay = false;
+        let autoPlayInterval = null;
+        let isScreenLocked = false;
+        let isAudioPlaying = false;
+        let isRepeatOn = false;
+        let audioSpeed = 1;
+        let currentViewMode = 'default';
+        let isZoomed = false;
+        let isSpread = false;
+
+        // ===== Initialization =====
+        document.addEventListener('DOMContentLoaded', () => {
+            const bookData = sessionStorage.getItem('currentBook');
+            if (bookData) {
+                const book = JSON.parse(bookData);
+                document.getElementById('book-title').textContent = book.title || '마법사의 물약';
+                // sessionStorage에서 페이지 정보 읽기
+                if (book.currentBookPage) currentPage = book.currentBookPage;
+                if (book.totalPages) totalPages = book.totalPages;
+            }
+            // 페이지 표시 초기화
+            document.getElementById('total-pages').textContent = totalPages;
+            updatePageDisplay();
+        });
+
+        // ===== Navigation =====
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'home.html';
+            }
+        }
+
+        function prevPage(e) {
+            if (e) e.stopPropagation();
+            if (currentViewMode === 'single') {
+                if (currentPage > 1) {
+                    currentPage -= 1;
+                    updatePageDisplay();
+                }
+            } else {
+                if (currentPage > 2) {
+                    currentPage -= 2;
+                    updatePageDisplay();
+                }
+            }
+        }
+
+        function nextPage(e) {
+            if (e) e.stopPropagation();
+            if (currentViewMode === 'single') {
+                if (currentPage < totalPages) {
+                    currentPage += 1;
+                    updatePageDisplay();
+                    checkCompletion();
+                }
+            } else {
+                if (currentPage < totalPages - 1) {
+                    currentPage += 2;
+                    updatePageDisplay();
+                    checkCompletion();
+                }
+            }
+        }
+
+        function updatePageDisplay() {
+            document.getElementById('current-page').textContent = currentPage;
+            document.getElementById('left-page-num').textContent = currentPage;
+            document.getElementById('right-page-num').textContent = Math.min(currentPage + 1, totalPages);
+            const progress = (currentPage / totalPages) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+
+            // 왼쪽 페이지 콘텐츠 업데이트
+            const leftIdx = currentPage - 1;
+            const leftPage = document.getElementById('left-page');
+            const leftContent = leftPage.querySelector('.page-content');
+            if (leftIdx < bookPages.length) {
+                const lp = bookPages[leftIdx];
+                const emojis = lp.emoji.length > 2 ? lp.emoji : `<span class="bounce-soft">${lp.emoji}</span>`;
+                leftContent.innerHTML = `<div class="text-center">
+                    <div class="text-7xl md:text-8xl mb-6">${emojis}</div>
+                    <p class="text-gray-700 text-lg md:text-xl leading-relaxed max-w-sm font-medium">${lp.text}</p>
+                </div>`;
+            }
+
+            // 오른쪽 페이지 콘텐츠 업데이트
+            const rightIdx = currentPage;
+            const rightPage = document.getElementById('right-page');
+            const rightContent = rightPage.querySelector('.page-content');
+            if (rightIdx < bookPages.length) {
+                const rp = bookPages[rightIdx];
+                const emojis = rp.emoji.length > 2 ? rp.emoji : `<span class="bounce-soft">${rp.emoji}</span>`;
+                rightContent.innerHTML = `<div class="text-center">
+                    <div class="text-6xl md:text-7xl mb-6">${emojis}</div>
+                    <p class="text-gray-700 text-lg md:text-xl leading-relaxed max-w-sm font-medium">${rp.text}</p>
+                </div>`;
+            } else {
+                rightContent.innerHTML = `<div class="text-center text-gray-300 text-lg">마지막 페이지</div>`;
+            }
+
+            // sessionStorage에 현재 페이지 진행 저장
+            const bookData = sessionStorage.getItem('currentBook');
+            if (bookData) {
+                const book = JSON.parse(bookData);
+                book.currentBookPage = currentPage;
+                book.totalPages = totalPages;
+                sessionStorage.setItem('currentBook', JSON.stringify(book));
+            }
+        }
+
+        // ===== 완독 체크 =====
+        function checkCompletion() {
+            // 마지막 페이지에 도달했는지 확인
+            const isLastPage = currentViewMode === 'single'
+                ? currentPage >= totalPages
+                : currentPage >= totalPages - 1;
+
+            if (isLastPage) {
+                // 약간의 딜레이 후 완독 모달 표시
+                setTimeout(() => {
+                    showCompletionModal();
+                }, 1000);
+            }
+        }
+
+        function showCompletionModal() {
+            const modal = document.getElementById('completion-modal');
+            const bookTitle = document.getElementById('book-title').textContent;
+            document.getElementById('completed-book-title').textContent = bookTitle;
+
+            // 현재 책 정보를 세션에 저장 (퀴즈에서 사용)
+            const bookData = sessionStorage.getItem('currentBook');
+            const isReReadingMode = sessionStorage.getItem('isReReadingMode') === 'true';
+
+            if (bookData) {
+                const book = JSON.parse(bookData);
+
+                // 다시 읽기 모드에서는 임시 진행상태만 업데이트
+                if (isReReadingMode || book.isReReading) {
+                    const rereadKey = 'rereadProgress_' + book.week + '_' + book.bookType;
+                    const rereadProgress = JSON.parse(sessionStorage.getItem(rereadKey) || '{}');
+                    rereadProgress.bookCompleted = true;
+                    sessionStorage.setItem(rereadKey, JSON.stringify(rereadProgress));
+                } else {
+                    // 최초 읽기일 때만 completed 상태를 변경
+                    book.completed = true;
+                }
+                sessionStorage.setItem('currentBook', JSON.stringify(book));
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function goToQuiz() {
+            // 퀴즈 페이지로 이동
+            window.location.href = 'quiz.html';
+        }
+
+        function skipQuiz() {
+            // 나중에 하기 - 홈으로 이동
+            window.location.href = 'home.html';
+        }
+
+        // ===== Bookmark =====
+        function toggleBookmark() {
+            const btn = document.getElementById('bookmark-btn');
+            const icon = btn.querySelector('i');
+            if (icon.classList.contains('fa-regular')) {
+                icon.classList.replace('fa-regular', 'fa-solid');
+                btn.classList.add('text-pink-500');
+            } else {
+                icon.classList.replace('fa-solid', 'fa-regular');
+                btn.classList.remove('text-pink-500');
+            }
+        }
+
+        // ===== Fullscreen =====
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // ===== Category 1: View Controls =====
+
+        // 보기방식
+        function toggleViewMode() {
+            const panel = document.getElementById('view-mode-panel');
+            const overlay = document.getElementById('panel-overlay');
+            closeAllPanels();
+            panel.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            const container = document.getElementById('book-container');
+
+            // Reset classes
+            container.classList.remove('view-single', 'view-fill');
+
+            // Apply new mode
+            if (mode === 'single') {
+                container.classList.add('view-single');
+            } else if (mode === 'fill') {
+                container.classList.add('view-fill');
+            }
+
+            // Update button states
+            document.querySelectorAll('.view-mode-btn').forEach(btn => {
+                btn.classList.remove('border-purple-300');
+                btn.classList.add('border-transparent');
+            });
+            document.querySelector(`[data-mode="${mode}"]`).classList.remove('border-transparent');
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('border-purple-300');
+
+            // Update label
+            const labels = { default: '기본', single: '단면', fill: '채움' };
+            document.getElementById('view-mode-label').textContent = labels[mode];
+
+            closeAllPanels();
+        }
+
+        // 확대보기
+        function toggleZoom() {
+            isZoomed = !isZoomed;
+            const btn = document.getElementById('zoom-btn');
+            const container = document.getElementById('book-container');
+
+            if (isZoomed) {
+                btn.classList.add('active');
+                container.style.transform = 'scale(1.2)';
+                container.style.transformOrigin = 'center center';
+            } else {
+                btn.classList.remove('active');
+                container.style.transform = '';
+            }
+        }
+
+        // 펼쳐보기
+        function toggleSpread() {
+            isSpread = !isSpread;
+            const btn = document.getElementById('spread-btn');
+            const container = document.getElementById('book-container');
+
+            if (isSpread) {
+                btn.classList.add('active');
+                container.style.maxWidth = '100%';
+            } else {
+                btn.classList.remove('active');
+                container.style.maxWidth = '';
+            }
+        }
+
+        // 자동넘김
+        function toggleAutoPlay() {
+            isAutoPlay = !isAutoPlay;
+            const btn = document.getElementById('autoplay-btn');
+            const icon = document.getElementById('autoplay-icon');
+
+            if (isAutoPlay) {
+                btn.classList.add('active');
+                icon.classList.replace('fa-play', 'fa-pause');
+                autoPlayInterval = setInterval(() => {
+                    if (currentPage < totalPages - 1) {
+                        nextPage();
+                    } else {
+                        toggleAutoPlay();
+                    }
+                }, 5000);
+            } else {
+                btn.classList.remove('active');
+                icon.classList.replace('fa-pause', 'fa-play');
+                clearInterval(autoPlayInterval);
+            }
+        }
+
+        // 오디오 제어
+        function toggleAudioControl() {
+            const panel = document.getElementById('audio-control-panel');
+            const overlay = document.getElementById('panel-overlay');
+            closeAllPanels();
+            panel.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+
+        function toggleAudioPlay() {
+            isAudioPlaying = !isAudioPlaying;
+            const icon = document.getElementById('audio-play-icon');
+
+            if (isAudioPlaying) {
+                icon.classList.replace('fa-play', 'fa-pause');
+            } else {
+                icon.classList.replace('fa-pause', 'fa-play');
+            }
+        }
+
+        function audioRewind() {
+            alert('⏪ 5초 뒤로');
+        }
+
+        function audioForward() {
+            alert('⏩ 5초 앞으로');
+        }
+
+        function setAudioSpeed(speed) {
+            audioSpeed = speed;
+            document.querySelectorAll('.audio-speed-btn').forEach(btn => {
+                const btnSpeed = parseFloat(btn.dataset.speed);
+                if (btnSpeed === speed) {
+                    btn.classList.add('bg-orange-100', 'text-brand-primary', 'border-2', 'border-orange-200', 'font-bold');
+                    btn.classList.remove('bg-gray-100');
+                } else {
+                    btn.classList.remove('bg-orange-100', 'text-brand-primary', 'border-2', 'border-orange-200', 'font-bold');
+                    btn.classList.add('bg-gray-100');
+                }
+            });
+        }
+
+        function toggleRepeat() {
+            isRepeatOn = !isRepeatOn;
+            const btn = document.getElementById('repeat-btn');
+
+            if (isRepeatOn) {
+                btn.classList.add('bg-pink-200', 'text-pink-700');
+                btn.classList.remove('bg-pink-50', 'text-pink-500');
+            } else {
+                btn.classList.remove('bg-pink-200', 'text-pink-700');
+                btn.classList.add('bg-pink-50', 'text-pink-500');
+            }
+        }
+
+        // ===== Category 2: Helper Tools (Header Dropdown) =====
+        function toggleHelperDropdown() {
+            const menu = document.getElementById('helper-dropdown');
+            const activityMenu = document.getElementById('activity-dropdown');
+            // 다른 드롭다운 닫기
+            activityMenu.classList.add('hidden');
+            menu.classList.toggle('hidden');
+        }
+
+        function toggleRecording() {
+            isRecording = !isRecording;
+            const btn = document.getElementById('record-btn');
+            const indicator = document.getElementById('recording-indicator');
+            const helperDropdown = document.getElementById('helper-dropdown');
+
+            if (isRecording) {
+                btn.classList.add('bg-red-100');
+                indicator.classList.remove('hidden');
+                helperDropdown.classList.add('hidden');
+                recordingSeconds = 0;
+                recordingInterval = setInterval(() => {
+                    recordingSeconds++;
+                    const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+                    const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+                    document.getElementById('recording-time').textContent = `${mins}:${secs}`;
+                }, 1000);
+            } else {
+                stopRecording();
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            const btn = document.getElementById('record-btn');
+            const indicator = document.getElementById('recording-indicator');
+
+            btn.classList.remove('bg-red-100');
+            indicator.classList.add('hidden');
+            clearInterval(recordingInterval);
+
+            if (recordingSeconds > 0) {
+                alert('🎙️ 녹음이 저장되었어요! (' + Math.floor(recordingSeconds / 60) + '분 ' + (recordingSeconds % 60) + '초)');
+            }
+        }
+
+        function openDictionary() {
+            document.getElementById('helper-dropdown').classList.add('hidden');
+            document.getElementById('dictionary-panel').classList.remove('hidden');
+            document.getElementById('panel-overlay').classList.remove('hidden');
+        }
+
+        function closeDictionary() {
+            document.getElementById('dictionary-panel').classList.add('hidden');
+            document.getElementById('panel-overlay').classList.add('hidden');
+        }
+
+        function saveFullScreen() {
+            document.getElementById('helper-dropdown').classList.add('hidden');
+            alert('📸 전체화면이 저장되었어요!');
+        }
+
+        function saveCustom() {
+            document.getElementById('helper-dropdown').classList.add('hidden');
+            alert('💖 내마음대로 저장했어요! 원하는 부분을 선택해서 저장할 수 있어요.');
+        }
+
+        // ===== Category 3: Activity Menu (Header Dropdown) =====
+        function toggleActivityDropdown() {
+            const menu = document.getElementById('activity-dropdown');
+            const helperMenu = document.getElementById('helper-dropdown');
+            // 다른 드롭다운 닫기
+            helperMenu.classList.add('hidden');
+            menu.classList.toggle('hidden');
+        }
+
+        function openReview() {
+            document.getElementById('activity-dropdown').classList.add('hidden');
+            document.getElementById('review-panel').classList.remove('hidden');
+        }
+
+        function closeReview() {
+            document.getElementById('review-panel').classList.add('hidden');
+        }
+
+        function openQuiz() {
+            document.getElementById('activity-dropdown').classList.add('hidden');
+            alert('❓ 독후퀴즈를 시작할게요!');
+        }
+
+        function openPairBook() {
+            document.getElementById('activity-dropdown').classList.add('hidden');
+            alert('👯 짝꿍책을 찾아볼게요!');
+        }
+
+        // ===== Category 4: Screen Lock =====
+        function toggleScreenLock() {
+            isScreenLocked = true;
+            const btn = document.getElementById('lock-btn');
+            const icon = btn.querySelector('i');
+            const overlay = document.getElementById('lock-overlay');
+
+            icon.classList.replace('fa-lock-open', 'fa-lock');
+            btn.classList.add('text-red-500');
+            overlay.classList.remove('hidden');
+        }
+
+        function unlockScreen() {
+            isScreenLocked = false;
+            const btn = document.getElementById('lock-btn');
+            const icon = btn.querySelector('i');
+            const overlay = document.getElementById('lock-overlay');
+
+            icon.classList.replace('fa-lock', 'fa-lock-open');
+            btn.classList.remove('text-red-500');
+            overlay.classList.add('hidden');
+        }
+
+        // ===== Utility =====
+        function closeAllPanels() {
+            document.getElementById('view-mode-panel').classList.add('hidden');
+            document.getElementById('audio-control-panel').classList.add('hidden');
+            document.getElementById('dictionary-panel').classList.add('hidden');
+            document.getElementById('panel-overlay').classList.add('hidden');
+            document.getElementById('helper-dropdown').classList.add('hidden');
+            document.getElementById('activity-dropdown').classList.add('hidden');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            const helperWrapper = document.getElementById('helper-dropdown-wrapper');
+            const activityWrapper = document.getElementById('activity-dropdown-wrapper');
+            const helperDropdown = document.getElementById('helper-dropdown');
+            const activityDropdown = document.getElementById('activity-dropdown');
+
+            if (helperWrapper && !helperWrapper.contains(e.target)) {
+                helperDropdown.classList.add('hidden');
+            }
+
+            if (activityWrapper && !activityWrapper.contains(e.target)) {
+                activityDropdown.classList.add('hidden');
+            }
+        });
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (isScreenLocked) return;
+
+            if (e.key === 'ArrowLeft') prevPage(e);
+            if (e.key === 'ArrowRight') nextPage(e);
+            if (e.key === 'Escape') closeAllPanels();
+        });
+    </script>
+
+<!-- Proto Navigation (怨듯넻 Dev Tool) -->
+<link rel="stylesheet" href="../css/proto-nav.css">
+<script src="../js/proto-nav.js"></script>
+</body>
+</html>

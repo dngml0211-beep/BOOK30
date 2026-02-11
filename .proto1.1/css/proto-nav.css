@@ -1,0 +1,223 @@
+/* ===== Proto Navigation (Dev Tool) - 공통 CSS ===== */
+
+#proto-nav-toggle {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #38bdf8;
+    border: 2px solid #475569;
+    font-size: 18px;
+    cursor: grab;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    touch-action: none;
+    user-select: none;
+}
+#proto-nav-toggle:hover {
+    transform: scale(1.1);
+    border-color: #38bdf8;
+    box-shadow: 0 0 20px rgba(56,189,248,0.3);
+}
+#proto-nav-toggle.active {
+    background: #38bdf8;
+    color: #0f172a;
+    border-color: #7dd3fc;
+}
+
+#proto-nav-panel {
+    position: fixed;
+    bottom: 102px;
+    right: 20px;
+    width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid #334155;
+    border-radius: 16px;
+    z-index: 10000;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    color: #e2e8f0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+#proto-nav-panel.proto-nav-hidden {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+    pointer-events: none;
+}
+#proto-nav-panel::-webkit-scrollbar { width: 4px; }
+#proto-nav-panel::-webkit-scrollbar-track { background: transparent; }
+#proto-nav-panel::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+.proto-nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid #1e293b;
+    font-weight: 700;
+    font-size: 14px;
+    color: #38bdf8;
+}
+.proto-nav-header i { margin-right: 6px; }
+.proto-nav-close {
+    background: none; border: none; color: #64748b;
+    font-size: 20px; cursor: pointer; padding: 0 4px;
+    line-height: 1;
+}
+.proto-nav-close:hover { color: #f87171; }
+
+.proto-nav-status {
+    padding: 8px 16px;
+    background: rgba(56, 189, 248, 0.08);
+    font-size: 11px;
+    color: #94a3b8;
+    border-bottom: 1px solid #1e293b;
+}
+
+.proto-nav-category { border-bottom: 1px solid #1e293b; }
+.proto-nav-cat-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    transition: background 0.15s;
+}
+.proto-nav-cat-btn:hover { background: rgba(255,255,255,0.05); }
+.proto-nav-cat-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #1e293b;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.proto-nav-options {
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+}
+.proto-nav-options.proto-nav-collapsed { max-height: 0; }
+.proto-nav-options.proto-nav-expanded { max-height: 500px; }
+
+.proto-nav-options button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px 9px 28px;
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+    transition: all 0.15s;
+}
+.proto-nav-options button:hover {
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+}
+.proto-nav-options button i {
+    width: 16px;
+    text-align: center;
+    color: #64748b;
+}
+.proto-nav-options button:hover i { color: #38bdf8; }
+
+.proto-nav-footer {
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 10px;
+    color: #475569;
+}
+
+.proto-nav-week-btns {
+    display: flex;
+    gap: 4px;
+    padding: 4px 28px 8px;
+}
+.proto-nav-week-btns button {
+    flex: 1;
+    padding: 6px 0 !important;
+    text-align: center !important;
+    justify-content: center !important;
+    border-radius: 8px;
+    background: #1e293b !important;
+    font-size: 11px !important;
+}
+.proto-nav-week-btns button:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+}
+
+/* 현재 페이지 표시 */
+.proto-nav-options a,
+.proto-nav-options a:visited {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px 9px 28px;
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+.proto-nav-options a:hover {
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+}
+.proto-nav-options a i {
+    width: 16px;
+    text-align: center;
+    color: #64748b;
+}
+.proto-nav-options a:hover i { color: #38bdf8; }
+.proto-nav-options a.proto-nav-current {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    font-weight: 600;
+}
+.proto-nav-options a.proto-nav-current i { color: #38bdf8; }
+
+.proto-nav-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #38bdf8;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 10002;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    border: 1px solid #475569;
+    animation: protoToastIn 0.3s ease-out;
+}
+@keyframes protoToastIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
