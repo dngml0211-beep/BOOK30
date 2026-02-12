@@ -27,6 +27,7 @@ html,body,#root{width:100%;height:100%;overflow:hidden;background:#fff}
 <body>
 <div id="root"></div>
 <script type="text/babel">
+console.log('🚀 review-writer.html 스크립트 시작');
 const {useState,useEffect,useRef,useCallback} = React;
 
 /* ────────── 상수 ────────── */
@@ -52,6 +53,8 @@ const STICKERS = ['⭐','❤️','🌈','🌸','✨','🎀','🦋','🍀','🎵'
 const DRAW_COLORS = ['#EF4444','#F97316','#FACC15','#22C55E','#3B82F6','#8B5CF6','#EC4899','#000000','#FFFFFF'];
 
 /* ────────── Firebase 초기화 ────────── */
+console.log('🔥 Firebase SDK 체크:', typeof firebase !== 'undefined' ? '로드됨' : '로드 안됨');
+
 const firebaseConfig = {
   apiKey: "AIzaSyBu6SF9_lrZwQVL8KZ2sbP9q-W9RN3DUww",
   authDomain: "bookclub-30.firebaseapp.com",
@@ -65,20 +68,25 @@ let firebaseApp = null;
 let firebaseDB = null;
 let firebaseAuth = null;
 
-try {
-  firebaseApp = firebase.initializeApp(firebaseConfig);
-  firebaseDB = firebase.firestore();
-  firebaseAuth = firebase.auth();
+if (typeof firebase === 'undefined') {
+  console.error('❌ Firebase SDK가 로드되지 않았습니다!');
+} else {
+  try {
+    console.log('🔥 Firebase 초기화 시작...');
+    firebaseApp = firebase.initializeApp(firebaseConfig);
+    firebaseDB = firebase.firestore();
+    firebaseAuth = firebase.auth();
 
-  firebaseAuth.signInAnonymously().then(user => {
-    console.log('✅ Firebase 익명 인증 성공:', user.user.uid);
-  }).catch(err => {
-    console.warn('⚠️ Firebase 익명 인증 실패:', err);
-  });
+    firebaseAuth.signInAnonymously().then(user => {
+      console.log('✅ Firebase 익명 인증 성공:', user.user.uid);
+    }).catch(err => {
+      console.warn('⚠️ Firebase 익명 인증 실패:', err);
+    });
 
-  console.log('✅ Firebase 초기화 완료');
-} catch (error) {
-  console.error('❌ Firebase 초기화 실패:', error);
+    console.log('✅ Firebase 초기화 완료');
+  } catch (error) {
+    console.error('❌ Firebase 초기화 실패:', error);
+  }
 }
 
 /* ────────── Firebase 저장 함수 ────────── */
