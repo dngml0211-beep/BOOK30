@@ -1110,20 +1110,39 @@
             return;
         }
 
-        // 독서뷰어로 이동
-        const bookData = {
-            id: book.id,
-            title: book.title,
-            author: book.author,
-            level: book.level,
-            source: 'book-library',
-            hasActivities: false, // 라이브러리에서는 퀴즈/어휘챌린지 없음
-            timestamp: new Date().toISOString()
-        };
+        // 영상인지 도서인지 구분해서 처리
+        if (book.type === 'video') {
+            // 영상 뷰어로 이동
+            const videoData = {
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                level: book.level,
+                duration: book.duration,
+                type: 'video',
+                source: 'book-library',
+                timestamp: new Date().toISOString()
+            };
 
-        sessionStorage.setItem('currentBook', JSON.stringify(bookData));
-        sessionStorage.setItem('referrer', 'book-library.html');
-        window.location.href = 'book-viewer-clean.html';
+            sessionStorage.setItem('currentVideo', JSON.stringify(videoData));
+            sessionStorage.setItem('referrer', 'book-library.html');
+            window.location.href = 'video-retelling.html';
+        } else {
+            // 독서뷰어로 이동
+            const bookData = {
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                level: book.level,
+                source: 'book-library',
+                hasActivities: false, // 라이브러리에서는 퀴즈/어휘챌린지 없음
+                timestamp: new Date().toISOString()
+            };
+
+            sessionStorage.setItem('currentBook', JSON.stringify(bookData));
+            sessionStorage.setItem('referrer', 'book-library.html');
+            window.location.href = 'book-viewer-clean.html';
+        }
     }
 
     // ============================================================

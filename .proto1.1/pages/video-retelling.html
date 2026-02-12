@@ -82,9 +82,9 @@
             <!-- Toolbar -->
             <div class="flex items-center justify-between p-4 border-b border-gray-700">
                 <div class="flex items-center gap-2">
-                    <span class="text-sm text-gray-400">아기 공룡 둘리</span>
+                    <span class="text-sm text-gray-400" id="video-title">아기 공룡 둘리</span>
                     <span class="text-gray-600">·</span>
-                    <span class="text-sm text-brand-primary">3장. 신나는 모험</span>
+                    <span class="text-sm text-brand-primary" id="video-author">북클럽TV</span>
                 </div>
                 <div class="flex items-center gap-3">
                     <button class="px-3 py-2 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition-colors">
@@ -161,11 +161,32 @@
     <!-- Scripts -->
     <script src="../js/common.js"></script>
     <script>
+        // 페이지 로드 시 영상 정보 표시
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoData = JSON.parse(sessionStorage.getItem('currentVideo') || '{}');
+
+            if (videoData.title) {
+                document.getElementById('video-title').textContent = videoData.title;
+            }
+
+            if (videoData.author) {
+                document.getElementById('video-author').textContent = videoData.author;
+            }
+        });
+
         function goBack() {
             // AI 버디에서 온 경우 버디로 돌아가기
             const chatState = sessionStorage.getItem('aiBuddyChatState');
             if (chatState) {
                 window.location.href = 'ai-buddy.html';
+                return;
+            }
+
+            // referrer가 있으면 그곳으로 돌아가기
+            const referrer = sessionStorage.getItem('referrer');
+            if (referrer) {
+                sessionStorage.removeItem('referrer');
+                window.location.href = referrer;
                 return;
             }
 
