@@ -133,7 +133,7 @@
             <!-- Right: Badge -->
             <div class="flex items-center gap-1.5 bg-gradient-to-r from-orange-50 to-amber-50 px-2.5 py-1.5 rounded-lg border border-orange-100 flex-shrink-0">
                 <span class="text-base">🐿️</span>
-                <span class="font-noto text-xs text-brand-primary font-bold hidden sm:inline">Lv.5</span>
+                <span class="font-noto text-xs text-brand-primary font-bold hidden sm:inline" id="level-badge">K2-1</span>
             </div>
         </div>
     </header>
@@ -348,6 +348,11 @@
             if (currentBook.title) {
                 document.getElementById('content-title').textContent = currentBook.title;
                 document.getElementById('content-subtitle').textContent = currentBook.author || 'AI 버디와 함께 읽기';
+            }
+
+            // 홈화면에서 가져온 레벨 표시
+            if (currentBook.level) {
+                document.getElementById('level-badge').textContent = currentBook.level;
             }
 
             enableClickToggle();
