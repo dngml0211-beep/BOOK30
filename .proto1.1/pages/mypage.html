@@ -6905,8 +6905,8 @@
                 reviewData: r // 원본 리뷰 데이터 포함
             }));
 
-            // 더미 데이터와 실제 감상문 합치기
-            let works = [...myWorks, ...reviewWorks];
+            // 실제 감상문만 표시
+            let works = [...reviewWorks];
 
             // 필터링
             if (galleryFilter !== 'all') {
