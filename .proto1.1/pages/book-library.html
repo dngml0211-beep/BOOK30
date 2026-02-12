@@ -1031,9 +1031,32 @@
 
         saveUserData();
 
-        // 도서 상세 페이지로 이동 (추후 구현)
-        // window.location.href = `book-detail.html?id=${bookId}`;
-        console.log('View book:', bookId);
+        // 도서 찾기
+        let book = null;
+        Object.keys(booksData).forEach(cat => {
+            const found = booksData[cat].books.find(b => b.id === bookId);
+            if (found) book = found;
+        });
+
+        if (!book) {
+            console.error('Book not found:', bookId);
+            return;
+        }
+
+        // 독서뷰어로 이동
+        const bookData = {
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            level: book.level,
+            source: 'book-library',
+            hasActivities: false, // 라이브러리에서는 퀴즈/어휘챌린지 없음
+            timestamp: new Date().toISOString()
+        };
+
+        sessionStorage.setItem('currentBook', JSON.stringify(bookData));
+        sessionStorage.setItem('referrer', 'book-library.html');
+        window.location.href = 'book-viewer-clean.html';
     }
 
     // ============================================================
