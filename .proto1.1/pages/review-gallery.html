@@ -19,7 +19,6 @@ body {
     padding: 40px 20px;
 }
 
-/* Netflix Style Section */
 .netflix-recommendations {
     margin-bottom: 3rem;
 }
@@ -95,166 +94,6 @@ body {
     box-shadow: 0 8px 16px rgba(255, 159, 67, 0.2);
 }
 
-.netflix-books-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    padding: 0 4px;
-}
-
-.netflix-book-card-horizontal {
-    position: relative;
-    display: flex;
-    background: white;
-    border-radius: 24px;
-    overflow: hidden;
-    border: 2px solid transparent;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 260px;
-    cursor: pointer;
-}
-
-.netflix-book-card-horizontal:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
-}
-
-.netflix-card-thumbnail {
-    position: relative;
-    flex: 0 0 160px;
-    overflow: hidden;
-    background: #f3f4f6;
-}
-
-.netflix-card-thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.netflix-book-card-horizontal:hover .netflix-card-thumbnail img {
-    transform: scale(1.05);
-}
-
-.netflix-card-match {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #FF9F43;
-    box-shadow: 0 4px 12px rgba(255, 159, 67, 0.2);
-}
-
-.netflix-card-match.purple { color: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); }
-.netflix-card-match.pink { color: #F472B6; box-shadow: 0 4px 12px rgba(244, 114, 182, 0.2); }
-.netflix-card-match.teal { color: #14B8A6; box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2); }
-.netflix-card-match.amber { color: #F59E0B; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2); }
-
-.netflix-card-info {
-    flex: 1;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    overflow: hidden;
-}
-
-.netflix-card-ai-reason {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    background: linear-gradient(135deg, #FFF5EB 0%, #FFE4CC 100%);
-    border-radius: 12px;
-    border: 1px solid #FFD4A3;
-}
-
-.netflix-card-ai-reason.purple { background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); border-color: #D8B4FE; }
-.netflix-card-ai-reason.pink { background: linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%); border-color: #F9A8D4; }
-.netflix-card-ai-reason.teal { background: linear-gradient(135deg, #CCFBF1 0%, #99F6E4 100%); border-color: #5EEAD4; }
-.netflix-card-ai-reason.amber { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-color: #FCD34D; }
-
-.netflix-card-ai-reason i {
-    font-size: 13px;
-    color: #FF9F43;
-}
-
-.netflix-card-ai-reason.purple i { color: #8b5cf6; }
-.netflix-card-ai-reason.pink i { color: #F472B6; }
-.netflix-card-ai-reason.teal i { color: #14B8A6; }
-.netflix-card-ai-reason.amber i { color: #F59E0B; }
-
-.netflix-card-ai-reason span {
-    font-size: 12px;
-    font-weight: 600;
-    color: #4b5563;
-}
-
-.netflix-card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.netflix-card-header h3 {
-    font-size: 18px;
-    font-weight: 800;
-    color: #1f2937;
-    margin: 0;
-    line-height: 1.3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
-
-.netflix-card-meta {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 4px;
-}
-
-.meta-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    background: #f3f4f6;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #6b7280;
-}
-
-.meta-badge i {
-    font-size: 10px;
-}
-
-.netflix-card-desc {
-    font-size: 13px;
-    color: #6b7280;
-    line-height: 1.6;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    margin: 0;
-}
-
 .filter-tabs {
     display: flex;
     gap: 10px;
@@ -287,6 +126,103 @@ body {
     background: #FFF5EB;
 }
 
+/* 추천도서 넷플릭스 그리드 (2열) */
+.recommend-netflix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* 추천도서 카드 (세로형) */
+.rec-card-netflix {
+    position: relative;
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.rec-card-netflix:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.14);
+    border-color: #e5e7eb;
+}
+
+.rec-card-netflix .rec-cover {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: #f3f4f6;
+}
+
+.rec-card-netflix .rec-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.rec-card-netflix:hover .rec-cover img {
+    transform: scale(1.06);
+}
+
+.rec-card-netflix .rec-cover .rec-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    pointer-events: none;
+}
+
+.rec-card-netflix .rec-cover .rec-level {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.95);
+    color: #FF9F43;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rec-card-netflix .rec-cover .rec-level.purple { color: #8b5cf6; }
+.rec-card-netflix .rec-cover .rec-level.pink { color: #F472B6; }
+.rec-card-netflix .rec-cover .rec-level.amber { color: #F59E0B; }
+
+.rec-card-netflix .rec-info {
+    padding: 14px 16px 16px;
+}
+
+.rec-card-netflix .rec-info h4 {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rec-card-netflix .rec-info .rec-desc {
+    font-size: 12px;
+    color: #9ca3af;
+    line-height: 1.5;
+}
+
 .empty-state {
     text-align: center;
     padding: 80px 20px;
@@ -311,14 +247,17 @@ body {
 }
 
 @media (max-width: 768px) {
-    .netflix-books-grid {
-        grid-template-columns: 1fr;
+    .recommend-netflix-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
     }
-    .netflix-card-thumbnail {
-        flex: 0 0 120px;
-    }
-    .netflix-book-card-horizontal {
-        height: 220px;
+    .rec-card-netflix .rec-info { padding: 12px 14px 14px; }
+    .rec-card-netflix .rec-info h4 { font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+    .recommend-netflix-grid {
+        gap: 10px;
     }
 }
 </style>
@@ -345,7 +284,7 @@ body {
 
         <div class="filter-tabs" id="filterTabs"></div>
 
-        <div class="netflix-books-grid" id="reviewsGrid"></div>
+        <div class="recommend-netflix-grid" id="reviewsGrid"></div>
 
         <div class="empty-state" id="emptyState" style="display:none;">
             <div class="empty-state-icon">📭</div>
@@ -365,10 +304,10 @@ body {
 const STORAGE_KEY = 'bookclub3_reviews_v1';
 
 const REVIEW_TYPES = {
-    feeling: {icon:'💭', label:'내 마음', color:'', class:''},
-    character: {icon:'🎭', label:'주인공', color:'purple', class:'purple'},
-    question: {icon:'❓', label:'궁금해', color:'amber', class:'amber'},
-    doodle: {icon:'🎨', label:'자유 그림', color:'pink', class:'pink'},
+    feeling: {icon:'💭', label:'내 마음', class:''},
+    character: {icon:'🎭', label:'주인공', class:'purple'},
+    question: {icon:'❓', label:'궁금해', class:'amber'},
+    doodle: {icon:'🎨', label:'자유 그림', class:'pink'},
 };
 
 let currentFilter = 'all';
@@ -424,31 +363,20 @@ function renderReviews() {
         const colorClass = typeInfo.class || '';
 
         return `
-            <div class="netflix-book-card-horizontal" onclick="viewReview('${review.id}')">
-                <div class="netflix-card-thumbnail">
-                    ${review.drawing ? `<img src="${review.drawing}" alt="${review.bookTitle}">` : `<div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;"><span style="font-size:48px;">${typeInfo.icon}</span></div>`}
-                    <div class="netflix-card-match ${colorClass}">
-                        <i class="fa-solid fa-heart"></i>
-                        <span>${typeInfo.icon}</span>
+            <div class="rec-card-netflix" onclick="viewReview('${review.id}')">
+                <div class="rec-cover">
+                    ${review.drawing
+                        ? `<img src="${review.drawing}" alt="${review.bookTitle}">`
+                        : `<div style="width:100%;height:100%;background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);display:flex;align-items:center;justify-content:center;"><span style="font-size:80px;">${typeInfo.icon}</span></div>`
+                    }
+                    <div class="rec-gradient"></div>
+                    <div class="rec-level ${colorClass}">
+                        ${typeInfo.icon} ${typeInfo.label}
                     </div>
                 </div>
-                <div class="netflix-card-info">
-                    <div class="netflix-card-ai-reason ${colorClass}">
-                        <i class="fa-solid fa-book"></i>
-                        <span>${typeInfo.label} 감상문</span>
-                    </div>
-                    <div class="netflix-card-header">
-                        <div style="flex:1;">
-                            <h3>${review.bookTitle}</h3>
-                            <div class="netflix-card-meta">
-                                <span class="meta-badge">
-                                    <i class="fa-solid fa-calendar"></i>
-                                    ${review.createdAt}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="netflix-card-desc">${review.content || '그림으로 표현한 감상문입니다.'}</p>
+                <div class="rec-info">
+                    <h4>${review.bookTitle}</h4>
+                    <div class="rec-desc">${review.createdAt}</div>
                 </div>
             </div>
         `;
