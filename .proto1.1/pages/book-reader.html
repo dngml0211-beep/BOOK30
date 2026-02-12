@@ -2838,17 +2838,138 @@ const REVIEW_STICKERS = ['⭐','❤️','🌈','🌸','✨','🎀','🦋','🍀'
 const REVIEW_DRAW_COLORS = ['#EF4444','#F97316','#FACC15','#22C55E','#3B82F6','#8B5CF6','#EC4899','#000000','#FFFFFF'];
 
 const REPORTS_KEY = 'bookclub3_reports';
-function loadReports() {
-  try { return JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]'); } catch(e) { return []; }
+
+/**
+ * Firebase에서 감상문 로드
+ */
+async function loadReportsFromFirebase() {
+  if (!window.firebaseDB) {
+    console.warn('Firebase not initialized, using localStorage');
+    return loadReportsFromLocal();
+  }
+
+  try {
+    const userId = window.firebaseUser?.uid || 'anonymous';
+    const { collection, query, where, getDocs, orderBy } = window.firestoreExports;
+
+    const q = query(
+      collection(window.firebaseDB, 'reviews'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+
+    const snapshot = await getDocs(q);
+    const reviews = [];
+    snapshot.forEach(doc => {
+      reviews.push({ id: doc.id, ...doc.data() });
+    });
+
+    console.log('✅ Firebase에서 감상문 로드:', reviews.length, '개');
+    return reviews;
+  } catch (error) {
+    console.error('❌ Firebase 감상문 로드 실패:', error);
+    return loadReportsFromLocal();
+  }
 }
-function persistReports(arr) { localStorage.setItem(REPORTS_KEY, JSON.stringify(arr)); }
+
+/**
+ * localStorage에서 감상문 로드 (폴백)
+ */
+function loadReportsFromLocal() {
+  try {
+    return JSON.parse(localStorage.getItem(REPORTS_KEY) || '[]');
+  } catch(e) {
+    return [];
+  }
+}
+
+/**
+ * 동기 방식으로 감상문 로드 (기존 호환성)
+ */
+function loadReports() {
+  return loadReportsFromLocal();
+}
+
+/**
+ * localStorage에 감상문 저장
+ */
+function persistReports(arr) {
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(arr));
+}
+
+/**
+ * Firebase에 감상문 저장
+ */
+async function saveReviewToFirebase(report) {
+  if (!window.firebaseDB) {
+    console.warn('Firebase not initialized, using localStorage only');
+    return;
+  }
+
+  try {
+    const userId = window.firebaseUser?.uid || 'anonymous';
+    const { collection, doc, setDoc } = window.firestoreExports;
+
+    const reviewData = {
+      ...report,
+      userId,
+      timestamp: Date.now()
+    };
+
+    await setDoc(doc(window.firebaseDB, 'reviews', report.id), reviewData);
+    console.log('✅ Firebase에 감상문 저장 완료:', report.id);
+  } catch (error) {
+    console.error('❌ Firebase 감상문 저장 실패:', error);
+  }
+}
+
+/**
+ * 감상문 추가/수정 (localStorage + Firebase)
+ */
 function upsertReport(report) {
+  // localStorage 저장
   const arr = loadReports();
   const idx = arr.findIndex(r => r.id === report.id);
   if (idx >= 0) arr[idx] = report; else arr.unshift(report);
   persistReports(arr);
+
+  // Firebase 저장 (비동기)
+  saveReviewToFirebase(report).catch(err => {
+    console.error('Firebase 저장 중 오류:', err);
+  });
 }
-function removeReport(id) { persistReports(loadReports().filter(r => r.id !== id)); }
+
+/**
+ * Firebase에서 감상문 삭제
+ */
+async function deleteReviewFromFirebase(reviewId) {
+  if (!window.firebaseDB) {
+    console.warn('Firebase not initialized');
+    return;
+  }
+
+  try {
+    const { doc, deleteDoc } = window.firestoreExports;
+    await deleteDoc(doc(window.firebaseDB, 'reviews', reviewId));
+    console.log('✅ Firebase에서 감상문 삭제 완료:', reviewId);
+  } catch (error) {
+    console.error('❌ Firebase 감상문 삭제 실패:', error);
+  }
+}
+
+/**
+ * 감상문 삭제 (localStorage + Firebase)
+ */
+function removeReport(id) {
+  // localStorage에서 삭제
+  persistReports(loadReports().filter(r => r.id !== id));
+
+  // Firebase에서 삭제 (비동기)
+  deleteReviewFromFirebase(id).catch(err => {
+    console.error('Firebase 삭제 중 오류:', err);
+  });
+}
+
 function newId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
 
 /* ══════════════════════════════════════
@@ -3577,13 +3698,27 @@ function ReportWriter({ bookName, pageImageSrc, onExit, existingReport }) {
 
 /* --- Report Gallery (감상문 보기) --- */
 function ReportGallery({ bookName, onExit, onEdit }) {
-  const [reports, setReports] = useState(() => loadReports());
+  const [reports, setReports] = useState([]);
   const [confirmDel, setConfirmDel] = useState(null);
   const [viewReport, setViewReport] = useState(null);
   const thisBook = bookName ? reports.filter(r => r.bookName === bookName) : [];
   const otherBooks = bookName ? reports.filter(r => r.bookName !== bookName) : reports;
 
-  const handleDelete = (id) => { removeReport(id); setReports(loadReports()); setConfirmDel(null); };
+  // Firebase에서 감상문 로드
+  useEffect(() => {
+    loadReportsFromFirebase().then(setReports).catch(err => {
+      console.error('감상문 로드 실패:', err);
+      setReports(loadReportsFromLocal());
+    });
+  }, []);
+
+  const handleDelete = async (id) => {
+    removeReport(id);
+    // Firebase에서 다시 로드
+    const updated = await loadReportsFromFirebase();
+    setReports(updated);
+    setConfirmDel(null);
+  };
 
   const Card = ({ report }) => (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
