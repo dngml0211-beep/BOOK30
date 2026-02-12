@@ -2,260 +2,475 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>북클럽 3.0 - 독서 갤러리</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link rel="stylesheet" href="../css/common.css">
+<link rel="stylesheet" href="../css/sidebar.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
-html,body,#root{width:100%;height:100%;overflow:hidden;background:#f8f9fa}
-@keyframes fadeIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
-.review-card{animation:fadeIn 0.4s ease-out both}
-.review-card:nth-child(1){animation-delay:0.05s}
-.review-card:nth-child(2){animation-delay:0.1s}
-.review-card:nth-child(3){animation-delay:0.15s}
-.review-card:nth-child(4){animation-delay:0.2s}
-.masonry{column-count:1;column-gap:1rem}
-@media(min-width:640px){.masonry{column-count:2}}
-@media(min-width:1024px){.masonry{column-count:3}}
-.masonry-item{break-inside:avoid;margin-bottom:1rem}
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+.gallery-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Netflix Style Section */
+.netflix-recommendations {
+    margin-bottom: 3rem;
+}
+
+.netflix-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding: 0 4px;
+}
+
+.netflix-title-wrapper {
+    flex: 1;
+}
+
+.title-icon-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.title-sparkle {
+    font-size: 28px;
+    animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    50% { opacity: 0.7; transform: scale(1.1) rotate(15deg); }
+}
+
+.netflix-title {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #FF9F43 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.netflix-subtitle {
+    font-size: 14px;
+    color: #9ca3af;
+    margin: 0;
+    font-weight: 500;
+}
+
+.netflix-view-all {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: linear-gradient(135deg, #FFF5EB 0%, #FFE4CC 100%);
+    border: 2px solid #FFD4A3;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FF9F43;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.netflix-view-all:hover {
+    background: linear-gradient(135deg, #FFE4CC 0%, #FFD4A3 100%);
+    border-color: #FFBA7A;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(255, 159, 67, 0.2);
+}
+
+.netflix-books-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 0 4px;
+}
+
+.netflix-book-card-horizontal {
+    position: relative;
+    display: flex;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 260px;
+    cursor: pointer;
+}
+
+.netflix-book-card-horizontal:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+.netflix-card-thumbnail {
+    position: relative;
+    flex: 0 0 160px;
+    overflow: hidden;
+    background: #f3f4f6;
+}
+
+.netflix-card-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.netflix-book-card-horizontal:hover .netflix-card-thumbnail img {
+    transform: scale(1.05);
+}
+
+.netflix-card-match {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FF9F43;
+    box-shadow: 0 4px 12px rgba(255, 159, 67, 0.2);
+}
+
+.netflix-card-match.purple { color: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); }
+.netflix-card-match.pink { color: #F472B6; box-shadow: 0 4px 12px rgba(244, 114, 182, 0.2); }
+.netflix-card-match.teal { color: #14B8A6; box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2); }
+.netflix-card-match.amber { color: #F59E0B; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2); }
+
+.netflix-card-info {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.netflix-card-ai-reason {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #FFF5EB 0%, #FFE4CC 100%);
+    border-radius: 12px;
+    border: 1px solid #FFD4A3;
+}
+
+.netflix-card-ai-reason.purple { background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); border-color: #D8B4FE; }
+.netflix-card-ai-reason.pink { background: linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%); border-color: #F9A8D4; }
+.netflix-card-ai-reason.teal { background: linear-gradient(135deg, #CCFBF1 0%, #99F6E4 100%); border-color: #5EEAD4; }
+.netflix-card-ai-reason.amber { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-color: #FCD34D; }
+
+.netflix-card-ai-reason i {
+    font-size: 13px;
+    color: #FF9F43;
+}
+
+.netflix-card-ai-reason.purple i { color: #8b5cf6; }
+.netflix-card-ai-reason.pink i { color: #F472B6; }
+.netflix-card-ai-reason.teal i { color: #14B8A6; }
+.netflix-card-ai-reason.amber i { color: #F59E0B; }
+
+.netflix-card-ai-reason span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.netflix-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.netflix-card-header h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.netflix-card-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.meta-badge i {
+    font-size: 10px;
+}
+
+.netflix-card-desc {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    margin: 0;
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    overflow-x: auto;
+    padding: 10px 4px;
+}
+
+.filter-tab {
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.filter-tab.active {
+    background: linear-gradient(135deg, #FF9F43 0%, #f97316 100%);
+    border-color: #FF9F43;
+    color: white;
+}
+
+.filter-tab:hover:not(.active) {
+    border-color: #FFD4A3;
+    background: #FFF5EB;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.empty-state-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #4b5563;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #9ca3af;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+    .netflix-books-grid {
+        grid-template-columns: 1fr;
+    }
+    .netflix-card-thumbnail {
+        flex: 0 0 120px;
+    }
+    .netflix-book-card-horizontal {
+        height: 220px;
+    }
+}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const {useState,useEffect} = React;
 
+<div id="sidebar-placeholder"></div>
+
+<div class="gallery-container">
+    <section class="netflix-recommendations">
+        <div class="netflix-header">
+            <div class="netflix-title-wrapper">
+                <div class="title-icon-wrapper">
+                    <span class="title-sparkle">📚</span>
+                    <h2 class="netflix-title">나의 독서 갤러리</h2>
+                </div>
+                <p class="netflix-subtitle">내가 쓴 감상문 모음</p>
+            </div>
+            <button class="netflix-view-all" onclick="location.href='review-writer.html'">
+                새 감상문 쓰기
+                <i class="fa-solid fa-pen"></i>
+            </button>
+        </div>
+
+        <div class="filter-tabs" id="filterTabs"></div>
+
+        <div class="netflix-books-grid" id="reviewsGrid"></div>
+
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <div class="empty-state-icon">📭</div>
+            <h3>아직 작성한 감상문이 없어요</h3>
+            <p>첫 감상문을 작성해보세요!</p>
+            <button class="netflix-view-all" onclick="location.href='review-writer.html'">
+                감상문 쓰러 가기
+                <i class="fa-solid fa-pen"></i>
+            </button>
+        </div>
+    </section>
+</div>
+
+<script src="../js/common.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
 const STORAGE_KEY = 'bookclub3_reviews_v1';
 
-function loadReviews() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-const REVIEW_TYPE_INFO = {
-  feeling: {icon:'💭', label:'내 마음', color:'from-pink-400 to-rose-400', bg:'bg-pink-50'},
-  character: {icon:'🎭', label:'주인공', color:'from-purple-400 to-indigo-400', bg:'bg-purple-50'},
-  question: {icon:'❓', label:'궁금해', color:'from-amber-400 to-orange-400', bg:'bg-amber-50'},
-  doodle: {icon:'🎨', label:'자유 그림', color:'from-emerald-400 to-teal-400', bg:'bg-emerald-50'},
+const REVIEW_TYPES = {
+    feeling: {icon:'💭', label:'내 마음', color:'', class:''},
+    character: {icon:'🎭', label:'주인공', color:'purple', class:'purple'},
+    question: {icon:'❓', label:'궁금해', color:'amber', class:'amber'},
+    doodle: {icon:'🎨', label:'자유 그림', color:'pink', class:'pink'},
 };
 
-function ReviewGallery() {
-  const [reviews, setReviews] = useState([]);
-  const [filter, setFilter] = useState('all'); // all | feeling | character | question | doodle
-  const [viewMode, setViewMode] = useState('grid'); // grid | masonry
-  const [selectedReview, setSelectedReview] = useState(null);
+let currentFilter = 'all';
+let reviews = [];
 
-  useEffect(() => {
-    const loadedReviews = loadReviews();
-    setReviews(loadedReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-  }, []);
-
-  const filteredReviews = filter === 'all'
-    ? reviews
-    : reviews.filter(r => r.type === filter);
-
-  const goBack = () => {
-    const referrer = sessionStorage.getItem('referrer');
-    if (referrer) {
-      window.location.href = referrer;
-    } else {
-      window.location.href = 'home.html';
+function loadReviews() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch {
+        return [];
     }
-  };
+}
 
-  const goToWrite = () => {
+function renderFilters() {
+    const filterTabs = document.getElementById('filterTabs');
+    const counts = {all: reviews.length};
+    Object.keys(REVIEW_TYPES).forEach(type => {
+        counts[type] = reviews.filter(r => r.type === type).length;
+    });
+
+    let html = `<div class="filter-tab ${currentFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">
+        전체 (${counts.all})
+    </div>`;
+
+    Object.entries(REVIEW_TYPES).forEach(([key, info]) => {
+        html += `<div class="filter-tab ${currentFilter === key ? 'active' : ''}" onclick="setFilter('${key}')">
+            ${info.icon} ${info.label} (${counts[key]})
+        </div>`;
+    });
+
+    filterTabs.innerHTML = html;
+}
+
+function renderReviews() {
+    const grid = document.getElementById('reviewsGrid');
+    const emptyState = document.getElementById('emptyState');
+
+    const filtered = currentFilter === 'all'
+        ? reviews
+        : reviews.filter(r => r.type === currentFilter);
+
+    if (filtered.length === 0) {
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    grid.style.display = 'grid';
+    emptyState.style.display = 'none';
+
+    grid.innerHTML = filtered.map(review => {
+        const typeInfo = REVIEW_TYPES[review.type] || {};
+        const colorClass = typeInfo.class || '';
+
+        return `
+            <div class="netflix-book-card-horizontal" onclick="viewReview('${review.id}')">
+                <div class="netflix-card-thumbnail">
+                    ${review.drawing ? `<img src="${review.drawing}" alt="${review.bookTitle}">` : `<div style="width:100%;height:100%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;"><span style="font-size:48px;">${typeInfo.icon}</span></div>`}
+                    <div class="netflix-card-match ${colorClass}">
+                        <i class="fa-solid fa-heart"></i>
+                        <span>${typeInfo.icon}</span>
+                    </div>
+                </div>
+                <div class="netflix-card-info">
+                    <div class="netflix-card-ai-reason ${colorClass}">
+                        <i class="fa-solid fa-book"></i>
+                        <span>${typeInfo.label} 감상문</span>
+                    </div>
+                    <div class="netflix-card-header">
+                        <div style="flex:1;">
+                            <h3>${review.bookTitle}</h3>
+                            <div class="netflix-card-meta">
+                                <span class="meta-badge">
+                                    <i class="fa-solid fa-calendar"></i>
+                                    ${review.createdAt}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="netflix-card-desc">${review.content || '그림으로 표현한 감상문입니다.'}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function setFilter(filter) {
+    currentFilter = filter;
+    renderFilters();
+    renderReviews();
+}
+
+function viewReview(id) {
+    sessionStorage.setItem('reviewId', id);
     sessionStorage.setItem('referrer', 'review-gallery.html');
-    window.location.href = 'review-writer.html';
-  };
-
-  return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
-      {/* 헤더 */}
-      <div className="shrink-0 px-5 py-4 bg-white/90 backdrop-blur-sm shadow-md z-20">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <button onClick={goBack}
-              className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 font-bold text-sm text-gray-600 active:scale-95 transition">
-              ← 나가기
-            </button>
-            <h1 className="font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-              📚 독서 갤러리
-            </h1>
-          </div>
-          <button onClick={goToWrite}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-sm shadow-lg hover:shadow-xl active:scale-95 transition">
-            ✏️ 새 감상문
-          </button>
-        </div>
-
-        {/* 필터 */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <button onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
-              filter === 'all'
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}>
-            전체 ({reviews.length})
-          </button>
-          {Object.entries(REVIEW_TYPE_INFO).map(([key, info]) => {
-            const count = reviews.filter(r => r.type === key).length;
-            return (
-              <button key={key} onClick={() => setFilter(key)}
-                className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
-                  filter === key
-                    ? `bg-gradient-to-r ${info.color} text-white shadow-md`
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}>
-                {info.icon} {info.label} ({count})
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 뷰 모드 토글 */}
-        <div className="flex items-center gap-2 mt-3">
-          <button onClick={() => setViewMode('grid')}
-            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition ${
-              viewMode === 'grid' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
-            ▦ 그리드
-          </button>
-          <button onClick={() => setViewMode('masonry')}
-            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition ${
-              viewMode === 'masonry' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
-            ▤ 벽돌
-          </button>
-          <span className="ml-auto text-sm text-gray-500 font-semibold">
-            총 {filteredReviews.length}개
-          </span>
-        </div>
-      </div>
-
-      {/* 갤러리 컨텐츠 */}
-      <div className="flex-1 overflow-y-auto px-5 py-4">
-        {filteredReviews.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="text-8xl mb-4">📭</div>
-            <h2 className="text-xl font-black text-gray-400 mb-2">
-              {filter === 'all' ? '아직 작성한 감상문이 없어요' : '이 유형의 감상문이 없어요'}
-            </h2>
-            <p className="text-gray-400 mb-6">첫 감상문을 작성해보세요!</p>
-            <button onClick={goToWrite}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold shadow-lg hover:shadow-xl active:scale-95 transition">
-              ✏️ 감상문 쓰러 가기
-            </button>
-          </div>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredReviews.map((review, idx) => (
-              <ReviewCard key={review.id} review={review} onClick={() => setSelectedReview(review)} />
-            ))}
-          </div>
-        ) : (
-          <div className="masonry">
-            {filteredReviews.map((review, idx) => (
-              <div key={review.id} className="masonry-item">
-                <ReviewCard review={review} onClick={() => setSelectedReview(review)} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 상세 보기 모달 */}
-      {selectedReview && (
-        <ReviewDetailModal review={selectedReview} onClose={() => setSelectedReview(null)} />
-      )}
-    </div>
-  );
+    location.href = 'review-writer.html';
 }
 
-function ReviewCard({review, onClick}) {
-  const typeInfo = REVIEW_TYPE_INFO[review.type] || {};
-
-  return (
-    <div onClick={onClick}
-      className="review-card bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-      {/* 그림 */}
-      {review.drawing && (
-        <div className="relative aspect-video bg-gray-50">
-          <img src={review.drawing} alt="감상문 그림" className="w-full h-full object-contain" />
-          <div className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-white font-bold text-xs shadow-lg bg-gradient-to-r ${typeInfo.color}`}>
-            {typeInfo.icon} {typeInfo.label}
-          </div>
-        </div>
-      )}
-
-      {/* 정보 */}
-      <div className="p-4">
-        <h3 className="font-black text-lg text-gray-800 mb-1 line-clamp-1">
-          {review.bookTitle}
-        </h3>
-        <p className="text-sm text-gray-500 mb-3">{review.createdAt}</p>
-        {review.content && (
-          <p className="text-sm text-gray-600 line-clamp-2">{review.content}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ReviewDetailModal({review, onClose}) {
-  const typeInfo = REVIEW_TYPE_INFO[review.type] || {};
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={onClose}>
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-        onClick={e => e.stopPropagation()}>
-        {/* 헤더 */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-          <div>
-            <h2 className="font-black text-xl text-gray-800">{review.bookTitle}</h2>
-            <p className="text-sm text-gray-500 mt-1">{review.createdAt}</p>
-          </div>
-          <button onClick={onClose}
-            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-bold transition active:scale-95">
-            ✕
-          </button>
-        </div>
-
-        {/* 컨텐츠 */}
-        <div className="p-6">
-          {/* 타입 배지 */}
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-white font-bold text-sm shadow-lg bg-gradient-to-r ${typeInfo.color} mb-4`}>
-            <span className="text-lg">{typeInfo.icon}</span>
-            {typeInfo.label}
-          </div>
-
-          {/* 그림 */}
-          {review.drawing && (
-            <div className="bg-gray-50 rounded-2xl p-4 mb-4">
-              <img src={review.drawing} alt="감상문 그림" className="w-full rounded-xl" />
-            </div>
-          )}
-
-          {/* 텍스트 */}
-          {review.content && (
-            <div className="bg-gray-50 rounded-2xl p-4">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{review.content}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<ReviewGallery />);
+// 초기화
+reviews = loadReviews().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+renderFilters();
+renderReviews();
 </script>
 </body>
 </html>
