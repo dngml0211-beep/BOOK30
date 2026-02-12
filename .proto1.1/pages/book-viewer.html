@@ -648,9 +648,22 @@
 
         // ===== Navigation =====
         function goBack() {
-            if (window.history.length > 1) {
+            // sessionStorage에서 referrer 확인
+            const referrer = sessionStorage.getItem('referrer');
+
+            if (referrer) {
+                // referrer가 있으면 그곳으로 이동
+                console.log('🔙 뒤로가기:', referrer);
+                sessionStorage.removeItem('referrer');
+                sessionStorage.removeItem('currentBook');
+                window.location.href = referrer;
+            } else if (window.history.length > 1) {
+                // referrer 없으면 브라우저 뒤로가기
+                console.log('🔙 브라우저 뒤로가기');
                 window.history.back();
             } else {
+                // 히스토리도 없으면 홈으로
+                console.log('🔙 홈으로 이동');
                 window.location.href = 'home.html';
             }
         }

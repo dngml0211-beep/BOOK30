@@ -3039,6 +3039,8 @@
             saveWeekBookData(bookPayload, currentWeek + '_' + currentBookType);
             // book-viewer는 기존 'currentBook' 키를 읽으므로 호환용으로도 저장
             sessionStorage.setItem('currentBook', JSON.stringify(bookPayload));
+            // referrer 설정 (뷰어에서 뒤로가기 시 홈으로)
+            sessionStorage.setItem('referrer', 'home.html');
 
             // 페이지 넘김 애니메이션 후 이동
             const bookCard = document.getElementById('book-card');
@@ -3063,6 +3065,8 @@
                 source: 'home'
             };
             sessionStorage.setItem('currentBook', JSON.stringify(bookPayload));
+            // referrer 설정 (뷰어에서 뒤로가기 시 홈으로)
+            sessionStorage.setItem('referrer', 'home.html');
             window.location.href = 'book-viewer-clean.html';
         }
 
@@ -3863,6 +3867,8 @@
             // 주차별 + 책타입별 키에 저장
             saveWeekBookData(bookPayload, currentWeek + '_' + currentBookType);
             sessionStorage.setItem('currentBook', JSON.stringify(bookPayload));
+            // referrer 설정 (뷰어에서 뒤로가기 시 홈으로)
+            sessionStorage.setItem('referrer', 'home.html');
 
             // 페이지 넘김 애니메이션 후 독서 뷰어로 이동
             const bookCard = document.getElementById('book-card');
