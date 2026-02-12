@@ -5713,15 +5713,6 @@
             <div class="max-h-[70vh] overflow-y-auto">
                 <!-- Image -->
                 <div class="w-full aspect-video bg-gray-50 flex items-center justify-center" id="friend-work-image"></div>
-
-                <!-- Info -->
-                <div class="p-5">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-xl font-bold text-gray-800" id="friend-work-title"></h3>
-                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600" id="friend-work-type"></span>
-                    </div>
-                    <p class="text-gray-600 mb-4" id="friend-work-desc"></p>
-                </div>
             </div>
 
             <!-- Footer -->
@@ -7109,9 +7100,6 @@
             const name = document.getElementById('friend-work-name');
             const time = document.getElementById('friend-work-time');
             const image = document.getElementById('friend-work-image');
-            const title = document.getElementById('friend-work-title');
-            const type = document.getElementById('friend-work-type');
-            const desc = document.getElementById('friend-work-desc');
             const likes = document.getElementById('friend-work-likes');
             const likeBtn = document.getElementById('friend-work-like-btn');
 
@@ -7124,9 +7112,6 @@
             image.className = `w-full aspect-video ${work.bg} flex items-center justify-center`;
             image.innerHTML = `<span style="font-size:120px;">${work.emoji}</span>`;
 
-            title.textContent = work.title;
-            type.textContent = work.typeLabel;
-            desc.textContent = work.desc;
             likes.textContent = work.likes;
 
             // 좋아요 상태 업데이트
