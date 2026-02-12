@@ -3119,6 +3119,27 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        .bookshelf-write-btn {
+            width: 100%;
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        }
+        .bookshelf-write-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.4);
+        }
+        .bookshelf-write-btn:active {
+            transform: translateY(0);
+        }
         .bookshelf-empty {
             grid-column: 1 / -1;
             text-align: center;
@@ -6001,6 +6022,13 @@
                 const bgClass = book.bg || 'bg-gradient-to-br from-gray-100 to-gray-200';
                 const emoji = book.emoji || '📕';
 
+                // 감상문 쓰기 버튼 (읽는 중, 다 읽은 책에만 표시)
+                const writeReportBtn = (currentBookshelfTab === 'reading' || currentBookshelfTab === 'completed') ? `
+                    <button class="bookshelf-write-btn" onclick="writeReportFromShelf(event, '${book.id}', '${book.title.replace(/'/g, "\\'")}', '${book.genre || ''}')">
+                        ✏️ 감상문 쓰기
+                    </button>
+                ` : '';
+
                 return `
                     <div class="bookshelf-book" onclick="openBookFromShelf('${book.id}', '${(book.genre || '').replace(/'/g, "\\'")}')">
                         <div class="bookshelf-book-cover ${bgClass}">
@@ -6011,6 +6039,7 @@
                         <div class="bookshelf-book-info">
                             <div class="bookshelf-book-title">${book.title}</div>
                             <div class="bookshelf-book-series">${book.genre || ''}</div>
+                            ${writeReportBtn}
                         </div>
                     </div>
                 `;
@@ -6023,6 +6052,23 @@
             // book-viewer로 이동하거나 책 상세 페이지로 이동
             console.log('책 열기:', bookId, genre);
             // 필요시 window.location.href = 'book-viewer.html?id=' + bookId;
+        }
+
+        function writeReportFromShelf(event, bookId, bookTitle, genre) {
+            event.stopPropagation(); // 부모 클릭 이벤트 방지
+
+            // 책 정보를 sessionStorage에 저장
+            const bookData = {
+                id: bookId,
+                title: bookTitle,
+                genre: genre,
+                source: 'mypage'
+            };
+            sessionStorage.setItem('currentBook', JSON.stringify(bookData));
+            sessionStorage.setItem('referrer', 'mypage.html');
+
+            // 감상문 작성 페이지로 이동
+            window.location.href = '../../북클럽3.0_통합뷰어/prototype/북클럽3.0_감상문작성.html';
         }
 
         function toggleShelfFav(event, bookId) {
