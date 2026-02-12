@@ -111,10 +111,16 @@
     <!-- Top Header (한 줄) -->
     <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-orange-100 shadow-sm">
         <div class="relative flex items-center justify-between px-4 py-2.5">
-            <!-- Left: Back Button -->
+            <!-- Left: Back Button + Chatbot Test -->
             <div class="flex items-center gap-2 flex-shrink-0">
                 <button onclick="goBack()" class="back-btn w-9 h-9 bg-orange-50 hover:bg-orange-100 rounded-lg flex items-center justify-center text-brand-primary transition-colors">
                     <i class="fa-solid fa-arrow-left text-sm"></i>
+                </button>
+
+                <!-- 챗봇 테스트 버튼 -->
+                <button onclick="toggleBuddyTestPanel()" class="bg-green-600 hover:bg-green-500 px-2.5 py-1.5 rounded-lg text-white text-xs font-bold transition-colors flex items-center gap-1.5" title="챗봇 테스트 모드">
+                    <span>●</span>
+                    <span class="hidden sm:inline">챗봇 테스트</span>
                 </button>
             </div>
 
