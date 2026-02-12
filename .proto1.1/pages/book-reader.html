@@ -2901,14 +2901,19 @@ function persistReports(arr) {
  * Firebase에 감상문 저장
  */
 async function saveReviewToFirebase(report) {
+  console.log('🔥 saveReviewToFirebase 시작:', { reportId: report.id, firebaseDB: !!window.firebaseDB });
+
   if (!window.firebaseDB) {
-    console.warn('Firebase not initialized, using localStorage only');
+    console.warn('⚠️ Firebase not initialized, using localStorage only');
     return;
   }
 
   try {
     const userId = window.firebaseUser?.uid || 'anonymous';
+    console.log('👤 User ID:', userId);
+
     const { collection, doc, setDoc } = window.firestoreExports;
+    console.log('📦 Firestore 모듈:', { collection: !!collection, doc: !!doc, setDoc: !!setDoc });
 
     const reviewData = {
       ...report,
@@ -2916,10 +2921,12 @@ async function saveReviewToFirebase(report) {
       timestamp: Date.now()
     };
 
+    console.log('💾 Firestore setDoc 호출 중...', { reviewId: report.id });
     await setDoc(doc(window.firebaseDB, 'reviews', report.id), reviewData);
     console.log('✅ Firebase에 감상문 저장 완료:', report.id);
   } catch (error) {
     console.error('❌ Firebase 감상문 저장 실패:', error);
+    console.error('Error details:', error.message, error.code);
   }
 }
 
@@ -2927,9 +2934,12 @@ async function saveReviewToFirebase(report) {
  * 감상문 추가/수정 (Firebase 우선, localStorage는 폴백)
  */
 function upsertReport(report) {
+  console.log('📝 upsertReport 호출됨:', report.id);
+
   // Firebase 저장 (우선)
+  console.log('🔥 Firebase 저장 시도 중...');
   saveReviewToFirebase(report).catch(err => {
-    console.error('Firebase 저장 중 오류:', err);
+    console.error('❌ Firebase 저장 중 오류:', err);
   });
 
   // localStorage 저장 (용량 체크 후 저장)
@@ -2938,12 +2948,13 @@ function upsertReport(report) {
     const idx = arr.findIndex(r => r.id === report.id);
     if (idx >= 0) arr[idx] = report; else arr.unshift(report);
     persistReports(arr);
+    console.log('💾 localStorage 저장 완료');
   } catch (error) {
     if (error.name === 'QuotaExceededError') {
       console.warn('⚠️ localStorage 용량 초과, Firebase만 사용합니다.');
       // localStorage 용량 초과 시 Firebase만 사용
     } else {
-      console.error('localStorage 저장 실패:', error);
+      console.error('❌ localStorage 저장 실패:', error);
     }
   }
 }
