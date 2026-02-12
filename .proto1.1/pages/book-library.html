@@ -378,6 +378,28 @@
             letter-spacing: 0.1em;
         }
 
+        /* 영상 카드 스타일 */
+        .video-card .book-cover {
+            background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+        }
+        .video-placeholder {
+            color: #FF9F43;
+        }
+        .video-placeholder i {
+            font-size: 48px;
+            color: #FF9F43;
+        }
+        .video-placeholder span {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            color: #FF9F43;
+        }
+        .video-duration {
+            background: rgba(255, 159, 67, 0.95);
+            color: white;
+        }
+
         /* 상단 탑바 (진행률 배지 + 찜 버튼) */
         .book-cover-topbar {
             position: absolute;
@@ -617,6 +639,7 @@
         const books = [];
         const authors = ['김영희', '박철수', '이미영', '최지훈', '한서연', '정다은', '윤재민', '송민지', '강태호', '조수빈'];
         const readingStatuses = ['', '', '', '', 'reading', 'reading', 'completed', 'completed', 'completed', ''];
+        const videoDurations = ['3:24', '5:18', '7:42', '4:56', '6:12', '8:30', '2:45', '10:15', '5:00', '12:20'];
 
         const titlesByCategory = {
             '언어': ['동화나라', '글자친구', '이야기보따리', '말놀이', '책읽는즐거움', '동시나라', '글쓰기대장', '낱말탐험', '옛이야기', '세계명작'],
@@ -640,18 +663,40 @@
             const levelNum = (i % 4) + 1;
             const level = levelPrefix + levelNum;
 
+            // 무작위로 20% 확률로 영상 자료 생성
+            const isVideo = Math.random() < 0.2;
             const status = readingStatuses[i % readingStatuses.length];
-            books.push({
-                id: startId + i,
-                title: titleBase + ' ' + (Math.floor(i / 10) + 1) + '권',
-                author: authors[i % authors.length],
-                level: level,
-                category: cat,
-                img: '',
-                favorited: i % 7 === 0,
-                readingStatus: status,
-                readingProgress: status === 'reading' ? (Math.floor(Math.random() * 70) + 15) : 0
-            });
+
+            if (isVideo) {
+                // 영상 자료
+                books.push({
+                    id: startId + i,
+                    title: titleBase + ' 영상 ' + (Math.floor(i / 10) + 1) + '편',
+                    author: '북클럽TV',
+                    level: level,
+                    category: cat,
+                    img: '',
+                    type: 'video',
+                    duration: videoDurations[i % videoDurations.length],
+                    favorited: i % 7 === 0,
+                    readingStatus: '',
+                    readingProgress: 0
+                });
+            } else {
+                // 도서 자료
+                books.push({
+                    id: startId + i,
+                    title: titleBase + ' ' + (Math.floor(i / 10) + 1) + '권',
+                    author: authors[i % authors.length],
+                    level: level,
+                    category: cat,
+                    img: '',
+                    type: 'book',
+                    favorited: i % 7 === 0,
+                    readingStatus: status,
+                    readingProgress: status === 'reading' ? (Math.floor(Math.random() * 70) + 15) : 0
+                });
+            }
         }
         return books;
     }
@@ -952,26 +997,48 @@
 
         let html = '';
         books.forEach(book => {
-            const coverHtml = book.img
-                ? `<img src="${book.img}" alt="${book.title}" onerror="this.parentNode.innerHTML='<div class=\\'book-cover-placeholder\\'><i class=\\'fa-solid fa-book\\'></i><span>BOOK</span></div>'">`
-                : `<div class="book-cover-placeholder"><i class="fa-solid fa-book"></i><span>BOOK</span></div>`;
+            const isVideo = book.type === 'video';
+
+            let coverHtml;
+            if (isVideo) {
+                // 영상 카드
+                coverHtml = book.img
+                    ? `<img src="${book.img}" alt="${book.title}">`
+                    : `<div class="book-cover-placeholder video-placeholder">
+                         <i class="fa-solid fa-play-circle" style="font-size:48px;color:#FF9F43;"></i>
+                         <span style="margin-top:8px;">VIDEO</span>
+                       </div>`;
+            } else {
+                // 도서 카드
+                coverHtml = book.img
+                    ? `<img src="${book.img}" alt="${book.title}" onerror="this.parentNode.innerHTML='<div class=\\'book-cover-placeholder\\'><i class=\\'fa-solid fa-book\\'></i><span>BOOK</span></div>'">`
+                    : `<div class="book-cover-placeholder"><i class="fa-solid fa-book"></i><span>BOOK</span></div>`;
+            }
 
             const favActiveClass = book.favorited ? 'active' : '';
             const favIcon = book.favorited ? 'fa-solid' : 'fa-regular';
 
-            const isReading = book.readingStatus === 'reading' && book.readingProgress > 0;
-            const progressBarHtml = isReading ? `
+            // 영상일 경우 재생시간 표시, 도서일 경우 독서 진행률 표시
+            let topBadgeHtml = '';
+            let progressBarHtml = '';
+
+            if (isVideo) {
+                topBadgeHtml = `<div class="book-progress-badge video-duration">${book.duration}</div>`;
+            } else {
+                const isReading = book.readingStatus === 'reading' && book.readingProgress > 0;
+                progressBarHtml = isReading ? `
                     <div class="book-reading-progress">
                         <div class="book-reading-progress-fill" style="width: ${book.readingProgress}%;"></div>
                     </div>` : '';
-            const progressBadgeHtml = isReading ? `<div class="book-progress-badge">${book.readingProgress}%</div>` : '';
+                topBadgeHtml = isReading ? `<div class="book-progress-badge">${book.readingProgress}%</div>` : '';
+            }
 
             html += `
-            <div class="book-card" onclick="viewBook(${book.id})">
+            <div class="book-card ${isVideo ? 'video-card' : ''}" onclick="viewBook(${book.id})">
                 <div class="book-cover">
                     ${coverHtml}
                     <div class="book-cover-topbar">
-                        ${progressBadgeHtml}
+                        ${topBadgeHtml}
                         <button class="favorite-btn ${favActiveClass}" onclick="toggleFavorite(event, ${book.id})">
                             <i class="${favIcon} fa-heart"></i>
                         </button>
