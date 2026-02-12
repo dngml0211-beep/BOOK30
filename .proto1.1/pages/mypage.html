@@ -5226,9 +5226,6 @@
                         <button class="gallery-subtab" data-gtab="following" onclick="switchGalleryTab('following')">
                             <i class="fa-solid fa-heart"></i> 관심친구
                         </button>
-                        <button class="gallery-subtab" data-gtab="reviews" onclick="switchGalleryTab('reviews')">
-                            <i class="fa-solid fa-book-open"></i> 내 감상문
-                        </button>
                     </div>
 
                     <!-- 내 작품 탭 -->
@@ -5290,40 +5287,6 @@
                             <div class="space-y-2" id="followers-list">
                                 <!-- JS로 렌더링 -->
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- 내 감상문 탭 -->
-                    <div id="gtab-reviews" class="gallery-content hidden">
-                        <!-- 필터 칩 -->
-                        <div class="gallery-filters">
-                            <button class="gallery-filter active" data-filter="all" onclick="filterReviews('all')">전체</button>
-                            <button class="gallery-filter" data-filter="feeling" onclick="filterReviews('feeling')">💭 내 마음</button>
-                            <button class="gallery-filter" data-filter="character" onclick="filterReviews('character')">🎭 주인공</button>
-                            <button class="gallery-filter" data-filter="question" onclick="filterReviews('question')">❓ 궁금해</button>
-                            <button class="gallery-filter" data-filter="doodle" onclick="filterReviews('doodle')">🎨 자유 그림</button>
-                        </div>
-                        <!-- 정렬 및 개수 -->
-                        <div class="flex items-center justify-between mb-3">
-                            <p class="text-xs text-gray-400">총 <strong class="text-gray-600" id="review-count">0</strong>개 감상문</p>
-                            <div class="flex items-center gap-2 text-xs">
-                                <button class="gallery-sort active" data-sort="recent" onclick="sortReviews('recent')">최신순</button>
-                                <span class="text-gray-300">|</span>
-                                <button class="gallery-sort" data-sort="likes" onclick="sortReviews('likes')">좋아요순</button>
-                            </div>
-                        </div>
-                        <!-- 감상문 그리드 -->
-                        <div class="reviews-grid" id="reviews-grid">
-                            <!-- JS로 렌더링 -->
-                        </div>
-                        <!-- 빈 상태 -->
-                        <div class="text-center py-16" id="reviews-empty" style="display:none;">
-                            <div class="text-6xl mb-4">📭</div>
-                            <h3 class="text-base font-bold text-gray-600 mb-2">아직 작성한 감상문이 없어요</h3>
-                            <p class="text-xs text-gray-400 mb-4">첫 감상문을 작성해보세요!</p>
-                            <button onclick="location.href='review-writer.html'" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm shadow active:scale-95 transition">
-                                감상문 쓰러 가기
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -6253,8 +6216,6 @@
             question: {icon:'❓', label:'궁금해', class:'amber'},
             doodle: {icon:'🎨', label:'자유 그림', class:'pink'},
         };
-        let reviewsFilter = 'all';
-        let reviewsSort = 'recent';
         let allReviews = [];
 
         // === 독서로 키재기 마일스톤 ===
@@ -6711,7 +6672,6 @@
             if (tab === 'my') renderMyGallery();
             if (tab === 'friends') renderFriendsGallery();
             if (tab === 'following') renderFollowingTab();
-            if (tab === 'reviews') renderReviews();
         }
 
         // === 필터 ===
@@ -6725,26 +6685,66 @@
         // === 내 작품 그리드 렌더링 ===
         function renderMyGallery() {
             const grid = document.getElementById('my-gallery-grid');
-            let works = [...myWorks];
+
+            // 실제 감상문 데이터 로드
+            loadReviews();
+
+            // 감상문 데이터를 갤러리 형식으로 변환
+            const reviewWorks = allReviews.map(r => ({
+                id: r.id,
+                type: 'review',
+                title: r.bookTitle,
+                likes: r.likes || Math.floor(Math.random() * 30),
+                date: r.createdAt.replace(/\./g, '').replace(/\s/g, ''),
+                bg: 'bg-gradient-to-br from-green-200 to-emerald-300',
+                emoji: REVIEW_TYPES[r.type]?.icon || '✏️',
+                typeLabel: '감상문',
+                typeColor: 'text-green-600',
+                isRealReview: true,
+                reviewId: r.id
+            }));
+
+            // 더미 데이터와 실제 감상문 합치기
+            let works = [...myWorks, ...reviewWorks];
+
+            // 필터링
             if (galleryFilter !== 'all') {
                 works = works.filter(w => w.type === galleryFilter);
             }
+
+            // 정렬
             if (gallerySort === 'likes') {
                 works.sort((a, b) => b.likes - a.likes);
             } else {
-                works.sort((a, b) => parseInt(b.date) - parseInt(a.date));
+                works.sort((a, b) => {
+                    const dateA = parseInt(a.date) || 0;
+                    const dateB = parseInt(b.date) || 0;
+                    return dateB - dateA;
+                });
             }
 
-            grid.innerHTML = works.map(w => `
-                <div class="gallery-item" data-type="${w.type}" onclick="openWork(${w.id})">
-                    <div class="gallery-item-bg ${w.bg}">${w.emoji}</div>
-                    <div class="gallery-item-type ${w.typeColor}">${w.typeLabel}</div>
-                    <div class="gallery-item-overlay">
-                        <div class="gallery-item-likes"><i class="fa-solid fa-heart"></i> ${w.likes}</div>
-                        <div class="gallery-item-title">${w.title}</div>
+            // 총 개수 업데이트
+            const countEl = document.querySelector('#gtab-my .text-gray-600');
+            if (countEl) {
+                countEl.textContent = works.length;
+            }
+
+            grid.innerHTML = works.map(w => {
+                const onclick = w.isRealReview
+                    ? `viewReview('${w.reviewId}')`
+                    : `openWork(${w.id})`;
+
+                return `
+                    <div class="gallery-item" data-type="${w.type}" onclick="${onclick}">
+                        <div class="gallery-item-bg ${w.bg}">${w.emoji}</div>
+                        <div class="gallery-item-type ${w.typeColor}">${w.typeLabel}</div>
+                        <div class="gallery-item-overlay">
+                            <div class="gallery-item-likes"><i class="fa-solid fa-heart"></i> ${w.likes}</div>
+                            <div class="gallery-item-title">${w.title}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // === 친구 작품 피드 렌더링 ===
@@ -6855,79 +6855,6 @@
             } catch {
                 allReviews = [];
             }
-        }
-
-        function filterReviews(filter) {
-            reviewsFilter = filter;
-            document.querySelectorAll('#gtab-reviews .gallery-filter').forEach(f => f.classList.remove('active'));
-            document.querySelector(`#gtab-reviews .gallery-filter[data-filter="${filter}"]`).classList.add('active');
-            renderReviews();
-        }
-
-        function sortReviews(sort) {
-            reviewsSort = sort;
-            document.querySelectorAll('#gtab-reviews .gallery-sort').forEach(s => s.classList.remove('active'));
-            document.querySelector(`#gtab-reviews .gallery-sort[data-sort="${sort}"]`).classList.add('active');
-            renderReviews();
-        }
-
-        function renderReviews() {
-            loadReviews();
-
-            const grid = document.getElementById('reviews-grid');
-            const emptyState = document.getElementById('reviews-empty');
-            const countEl = document.getElementById('review-count');
-
-            // 필터링
-            let filtered = reviewsFilter === 'all'
-                ? allReviews
-                : allReviews.filter(r => r.type === reviewsFilter);
-
-            // 정렬
-            if (reviewsSort === 'likes') {
-                filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-            } else {
-                filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            }
-
-            // 개수 업데이트
-            countEl.textContent = filtered.length;
-
-            // 빈 상태 처리
-            if (filtered.length === 0) {
-                grid.style.display = 'none';
-                emptyState.style.display = 'block';
-                return;
-            }
-
-            grid.style.display = 'grid';
-            emptyState.style.display = 'none';
-
-            // 카드 렌더링
-            grid.innerHTML = filtered.map(review => {
-                const typeInfo = REVIEW_TYPES[review.type] || {};
-                const colorClass = typeInfo.class || '';
-
-                return `
-                    <div class="review-card" onclick="viewReview('${review.id}')">
-                        <div class="review-cover">
-                            ${review.drawingData
-                                ? `<img src="${review.drawingData}" alt="${review.bookTitle}">`
-                                : `<div style="width:100%;height:100%;background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);display:flex;align-items:center;justify-content:center;"><span style="font-size:60px;">${typeInfo.icon}</span></div>`
-                            }
-                            <div class="review-type-badge ${colorClass}">
-                                ${typeInfo.icon} ${typeInfo.label}
-                            </div>
-                        </div>
-                        <div class="review-info">
-                            <h4>${review.bookTitle}</h4>
-                            <div class="review-desc">
-                                <i class="fa-solid fa-heart" style="color:#f87171;"></i> ${review.likes || 0} · ${review.createdAt}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
         }
 
         function viewReview(id) {
