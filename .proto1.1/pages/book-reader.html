@@ -1759,11 +1759,14 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
 
     // 현재 그린 영역의 중심점 계산
     const path = drawingPathRef.current;
+    console.log('🖊️ Pen Up - path 길이:', path.length);
     if (path.length > 0) {
       const xs = path.map(p => p.x);
       const ys = path.map(p => p.y);
       const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
       const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+
+      console.log('📍 계산된 중심점:', { centerX, centerY, page });
 
       // 현재 녹음 영역 정보 저장
       currentRecordingRef.current = {
@@ -1773,6 +1776,8 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
         path: [...path],
         timestamp: Date.now()
       };
+
+      console.log('✅ currentRecordingRef 설정됨:', currentRecordingRef.current);
 
       // 녹음 팝업 표시
       const cr = containerRef.current?.getBoundingClientRect();
@@ -1870,10 +1875,14 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
         console.log('✅ 오디오 URL 생성:', audioUrl);
+        console.log('📍 currentRecordingRef:', currentRecordingRef.current);
+        console.log('📍 현재 페이지:', page);
+        console.log('📍 녹음 시간:', recordingTime);
 
         // audioBlob을 base64로 변환하여 저장
         const reader = new FileReader();
         reader.onloadend = () => {
+          console.log('📝 FileReader 완료, base64 길이:', reader.result?.length);
           const base64Audio = reader.result;
 
           // 녹음 데이터 저장
@@ -1885,16 +1894,24 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
               createdAt: new Date().toISOString()
             };
 
+            console.log('💾 저장할 녹음 데이터:', recordingData);
+
             setRecordings(prev => {
               const next = { ...prev };
               if (!next[page]) next[page] = [];
               next[page] = [...next[page], recordingData];
+              console.log('💾 업데이트된 recordings:', next);
               saveRecordings(fileName, next);
               return next;
             });
 
             console.log('✅ 녹음 저장 완료');
+          } else {
+            console.error('❌ currentRecordingRef.current가 없습니다!');
           }
+        };
+        reader.onerror = (err) => {
+          console.error('❌ FileReader 에러:', err);
         };
         reader.readAsDataURL(audioBlob);
 
@@ -1951,6 +1968,12 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   });
+
+  // Recordings 디버깅
+  useEffect(() => {
+    console.log('🎤 Recordings 상태 변경:', recordings);
+    console.log('🎤 현재 페이지의 녹음 개수:', recordings[page]?.length || 0);
+  }, [recordings, page]);
 
   const goNext = useCallback(() => {
     const step = viewMode === 'spread' ? 2 : 1;
