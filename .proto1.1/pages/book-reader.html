@@ -1650,7 +1650,9 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
       pageNum: page,
       spanIdx: parseInt(target.dataset.idx),
       start: result.start,
-      end: result.end
+      end: result.end,
+      x: e.clientX - cr.left,
+      y: e.clientY - cr.top
     });
   }, [penMode, page]);
 
@@ -1806,7 +1808,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
 
   return (
     <div className="w-full h-full relative select-none cursor-grab active:cursor-grabbing"
-         {...swipeHandlers}
+         {...(penMode ? {} : swipeHandlers)}
          style={swipeStyle}>
 
       {/* Canvas area */}
