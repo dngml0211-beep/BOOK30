@@ -1444,6 +1444,8 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   const [dragEnd, setDragEnd] = useState(null);
   const textLayerRef = useRef(null);
   const highlightLayerRef = useRef(null);
+  const highlightCanvasRef = useRef(null);
+  const drawingPathRef = useRef([]);
   const pageWrapperRef = useRef(null);
 
   const captureCurrentPage = useCallback(() => {
@@ -1636,6 +1638,19 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     });
   }, [pdfDoc, page, penMode]);
 
+  // ── Setup highlight canvas size ──
+  useEffect(() => {
+    if (!highlightCanvasRef.current || !canvasRef.current) return;
+    const canvas = highlightCanvasRef.current;
+    const mainCanvas = canvasRef.current;
+    const width = parseFloat(mainCanvas.style.width) || mainCanvas.width;
+    const height = parseFloat(mainCanvas.style.height) || mainCanvas.height;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+  }, [canvasRef.current?.style.width, canvasRef.current?.style.height, page]);
+
   // ── Render highlight rectangles ──
   useEffect(() => {
     if (!highlightLayerRef.current || !canvasRef.current) return;
@@ -1673,63 +1688,54 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   }, [highlights, page, penMode]);
 
   // ── Text layer click handler ──
-  // ── 드래그 형광펜 기능 ──
+  // ── 드래그 형광펜 기능 (실시간 그리기) ──
   const handlePenPointerDown = useCallback((e) => {
-    if (!penMode) return;
-    const target = e.target;
-    if (target.tagName !== 'SPAN' || !target.parentElement?.classList.contains('textLayer')) return;
+    if (!penMode || !highlightCanvasRef.current) return;
     e.stopPropagation();
+    e.preventDefault();
+
+    const canvas = highlightCanvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
     setIsDragging(true);
-    setDragStart({ span: target, idx: parseInt(target.dataset.idx) });
-    setDragEnd({ span: target, idx: parseInt(target.dataset.idx) });
+    drawingPathRef.current = [{ x, y }];
+
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = 'rgba(255, 237, 74, 0.5)';
+    ctx.lineWidth = 20;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, y);
   }, [penMode]);
 
   const handlePenPointerMove = useCallback((e) => {
-    if (!isDragging || !penMode) return;
-    const target = document.elementFromPoint(e.clientX, e.clientY);
-    if (target?.tagName === 'SPAN' && target.parentElement?.classList.contains('textLayer')) {
-      setDragEnd({ span: target, idx: parseInt(target.dataset.idx) });
-    }
+    if (!isDragging || !penMode || !highlightCanvasRef.current) return;
+    e.preventDefault();
+
+    const canvas = highlightCanvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    drawingPathRef.current.push({ x, y });
+
+    const ctx = canvas.getContext('2d');
+    ctx.lineTo(x, y);
+    ctx.stroke();
   }, [isDragging, penMode]);
 
   const handlePenPointerUp = useCallback((e) => {
-    if (!isDragging || !penMode || !dragStart || !dragEnd) {
+    if (!isDragging || !penMode) {
       setIsDragging(false);
       return;
     }
 
-    const startIdx = Math.min(dragStart.idx, dragEnd.idx);
-    const endIdx = Math.max(dragStart.idx, dragEnd.idx);
-
-    // 드래그한 모든 span을 하이라이트로 저장
-    setHighlights(prev => {
-      const next = { ...prev };
-      if (!next[page]) next[page] = [];
-
-      for (let i = startIdx; i <= endIdx; i++) {
-        const span = textLayerRef.current?.querySelector(`span[data-idx="${i}"]`);
-        if (span) {
-          const text = span.textContent;
-          const exists = next[page].some(h => h.spanIdx === i && h.start === 0 && h.end === text.length);
-          if (!exists) {
-            next[page].push({
-              spanIdx: i,
-              start: 0,
-              end: text.length,
-              word: text,
-              type: 'highlight'
-            });
-          }
-        }
-      }
-
-      saveHighlights(fileName, next);
-      return next;
-    });
-
     // 녹음 팝업 표시
     const cr = containerRef.current?.getBoundingClientRect();
-    if (cr) {
+    if (cr && drawingPathRef.current.length > 0) {
       setRecordPopup({
         x: e.clientX - cr.left,
         y: e.clientY - cr.top + 40,
@@ -1738,9 +1744,8 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     }
 
     setIsDragging(false);
-    setDragStart(null);
-    setDragEnd(null);
-  }, [isDragging, penMode, dragStart, dragEnd, page, fileName]);
+    drawingPathRef.current = [];
+  }, [isDragging, penMode]);
 
   // ── Add highlight / underline ──
   const addMark = useCallback((type) => {
@@ -1918,12 +1923,22 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
           pointerEvents: penMode ? 'auto' : 'none'
         }}>
           <div ref={highlightLayerRef} className="highlightLayer" />
+          <canvas ref={highlightCanvasRef}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 10,
+                    pointerEvents: 'none'
+                  }} />
           <div ref={textLayerRef}
                className={`textLayer ${penMode ? 'active' : ''}`}
                onPointerDown={handlePenPointerDown}
                onPointerMove={handlePenPointerMove}
                onPointerUp={handlePenPointerUp}
-               style={{ pointerEvents: penMode ? 'auto' : 'none', touchAction: 'none' }} />
+               style={{ pointerEvents: penMode ? 'auto' : 'none', touchAction: 'none', zIndex: 20 }} />
         </div>
       </div>
 
