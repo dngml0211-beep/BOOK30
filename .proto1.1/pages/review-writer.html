@@ -8,6 +8,10 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 html,body,#root{width:100%;height:100%;overflow:hidden;background:#fff}
@@ -46,6 +50,70 @@ const REVIEW_TYPES = [
 const STICKERS = ['⭐','❤️','🌈','🌸','✨','🎀','🦋','🍀','🎵','🌻','💎','🎪'];
 
 const DRAW_COLORS = ['#EF4444','#F97316','#FACC15','#22C55E','#3B82F6','#8B5CF6','#EC4899','#000000','#FFFFFF'];
+
+/* ────────── Firebase 초기화 ────────── */
+const firebaseConfig = {
+  apiKey: "AIzaSyBu6SF9_lrZwQVL8KZ2sbP9q-W9RN3DUww",
+  authDomain: "bookclub-30.firebaseapp.com",
+  projectId: "bookclub-30",
+  storageBucket: "bookclub-30.firebasestorage.app",
+  messagingSenderId: "683148861039",
+  appId: "1:683148861039:web:2c52e87a6e41e5c1dc94b6"
+};
+
+let firebaseApp = null;
+let firebaseDB = null;
+let firebaseAuth = null;
+
+try {
+  firebaseApp = firebase.initializeApp(firebaseConfig);
+  firebaseDB = firebase.firestore();
+  firebaseAuth = firebase.auth();
+
+  firebaseAuth.signInAnonymously().then(user => {
+    console.log('✅ Firebase 익명 인증 성공:', user.user.uid);
+  }).catch(err => {
+    console.warn('⚠️ Firebase 익명 인증 실패:', err);
+  });
+
+  console.log('✅ Firebase 초기화 완료');
+} catch (error) {
+  console.error('❌ Firebase 초기화 실패:', error);
+}
+
+/* ────────── Firebase 저장 함수 ────────── */
+async function saveReviewToFirebase(reviewData) {
+  if (!firebaseDB) {
+    console.warn('⚠️ Firebase 미초기화, localStorage만 사용');
+    return;
+  }
+
+  try {
+    const userId = firebaseAuth?.currentUser?.uid || 'anonymous';
+    console.log('🔥 Firebase 저장 시작:', reviewData.id);
+
+    await firebaseDB.collection('reviews').doc(reviewData.id).set({
+      ...reviewData,
+      userId,
+      timestamp: Date.now()
+    });
+
+    console.log('✅ Firebase 저장 완료:', reviewData.id);
+  } catch (error) {
+    console.error('❌ Firebase 저장 실패:', error);
+  }
+}
+
+async function deleteReviewFromFirebase(reviewId) {
+  if (!firebaseDB) return;
+
+  try {
+    await firebaseDB.collection('reviews').doc(reviewId).delete();
+    console.log('✅ Firebase 삭제 완료:', reviewId);
+  } catch (error) {
+    console.error('❌ Firebase 삭제 실패:', error);
+  }
+}
 
 /* ────────── 유틸 ────────── */
 function loadReviews() {
@@ -652,6 +720,12 @@ function ReviewApp() {
 
     setReviews(updated);
     saveReviewsToStorage(updated);
+
+    // Firebase에도 저장
+    saveReviewToFirebase(reviewData).catch(err => {
+      console.error('Firebase 저장 중 오류:', err);
+    });
+
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -672,6 +746,11 @@ function ReviewApp() {
     const updated = reviews.filter(r => r.id !== id);
     setReviews(updated);
     saveReviewsToStorage(updated);
+
+    // Firebase에서도 삭제
+    deleteReviewFromFirebase(id).catch(err => {
+      console.error('Firebase 삭제 중 오류:', err);
+    });
   };
 
   // 감상문 수정 시작
