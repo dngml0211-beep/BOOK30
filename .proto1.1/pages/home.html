@@ -3031,7 +3031,9 @@
                 title: data.book.title, type: data.bookType, level: data.book.level,
                 currentBookPage: data.currentBookPage, totalPages: data.totalPages,
                 week: currentWeek,
-                bookType: currentBookType // 코어북/교과서짝꿍책 구분
+                bookType: currentBookType, // 코어북/교과서짝꿍책 구분
+                hasActivities: true, // 홈에서는 퀴즈/어휘챌린지 제공
+                source: 'home'
             };
             // 주차별 + 책타입별 키에 저장
             saveWeekBookData(bookPayload, currentWeek + '_' + currentBookType);
@@ -3056,7 +3058,9 @@
                 currentBookPage: 1, totalPages: data.totalPages,
                 week: currentWeek,
                 bookType: currentBookType,
-                reReading: true  // 다시 읽기 플래그 - 프로그래스바에 영향 없음
+                reReading: true, // 다시 읽기 플래그 - 프로그래스바에 영향 없음
+                hasActivities: true, // 홈에서는 퀴즈/어휘챌린지 제공
+                source: 'home'
             };
             sessionStorage.setItem('currentBook', JSON.stringify(bookPayload));
             window.location.href = 'book-viewer-clean.html';
