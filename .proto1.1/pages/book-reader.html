@@ -1584,6 +1584,42 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
       const offY = (ch - vp.height) / 2;
 
       return p.getTextContent().then(tc => {
+        // 텍스트가 없으면 테스트용 더미 텍스트 생성
+        if (!tc.items || tc.items.length === 0) {
+          console.log('⚠️ PDF에 텍스트 레이어가 없습니다. 테스트용 샘플 텍스트를 생성합니다.');
+          const dummyTexts = [
+            '옛날 옛적에 아름다운 숲속에 한 소녀가 살았습니다.',
+            '소녀는 매일 아침 숲속을 산책하며 동물 친구들과 놀았어요.',
+            '어느 날, 소녀는 숲 깊은 곳에서 신비로운 나무를 발견했습니다.',
+            '그 나무에는 반짝이는 열매가 주렁주렁 매달려 있었어요.',
+            '소녀가 열매를 따자, 갑자기 나무가 말을 걸기 시작했습니다.',
+            '"안녕, 용감한 소녀야. 나는 마법의 나무란다."',
+            '소녀는 깜짝 놀랐지만, 용기를 내어 나무에게 물었어요.',
+            '"마법의 나무님, 무엇을 도와드릴 수 있나요?"',
+            '나무는 부드러운 목소리로 대답했습니다.',
+            '"네가 이 열매를 마을 사람들과 나눠 먹으면 모두가 행복해질 거야."',
+            '소녀는 기쁜 마음으로 열매를 가득 담아 마을로 돌아갔습니다.',
+            '마을 사람들은 맛있는 열매를 먹고 모두 환하게 웃었어요.'
+          ];
+
+          const lineHeight = 35;
+          const startY = offY + 60;
+          const startX = offX + 40;
+
+          dummyTexts.forEach((text, idx) => {
+            const span = document.createElement('span');
+            span.textContent = text;
+            span.style.left = startX + 'px';
+            span.style.top = (startY + idx * lineHeight) + 'px';
+            span.style.fontSize = '18px';
+            span.style.fontFamily = 'Noto Sans KR, sans-serif';
+            span.style.color = 'rgba(0,0,0,0.8)';
+            span.dataset.idx = idx;
+            textDiv.appendChild(span);
+          });
+          return;
+        }
+
         tc.items.forEach((item, idx) => {
           const tx = pdfjsLib.Util.transform(vp.transform, item.transform);
           const span = document.createElement('span');
