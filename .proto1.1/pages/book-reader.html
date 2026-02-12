@@ -1434,6 +1434,11 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   const [wordPopup, setWordPopup] = useState(null);
   const [dictPopup, setDictPopup] = useState(null);
   const [highlights, setHighlights] = useState(() => loadHighlights(fileName));
+  const [recordPopup, setRecordPopup] = useState(null); // {x, y, text}
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioURL, setAudioURL] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const textLayerRef = useRef(null);
   const highlightLayerRef = useRef(null);
   const pageWrapperRef = useRef(null);
@@ -1652,7 +1657,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   // ── Add highlight / underline ──
   const addMark = useCallback((type) => {
     if (!wordPopup) return;
-    const { pageNum, spanIdx, start, end, word } = wordPopup;
+    const { pageNum, spanIdx, start, end, word, x, y } = wordPopup;
     setHighlights(prev => {
       const next = { ...prev };
       if (!next[pageNum]) next[pageNum] = [];
@@ -1663,6 +1668,12 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
       saveHighlights(fileName, next);
       return next;
     });
+
+    // 하이라이트 완료 후 녹음 팝업 표시 (형광펜만)
+    if (type === 'highlight') {
+      setWordPopup(null);
+      setRecordPopup({ x, y: y + 40, text: word });
+    }
   }, [wordPopup, fileName]);
 
   // ── Toggle pen mode ──
@@ -1671,6 +1682,46 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
       if (v) { setWordPopup(null); setDictPopup(null); }
       return !v;
     });
+  }, []);
+
+  // ── 녹음 기능 ──
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioURL(audioUrl);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error('녹음 시작 실패:', err);
+      alert('마이크 접근 권한이 필요합니다.');
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, [isRecording]);
+
+  const closeRecordPopup = useCallback(() => {
+    setRecordPopup(null);
+    setAudioURL(null);
+    setIsRecording(false);
   }, []);
 
   // Keyboard nav
@@ -1816,6 +1867,42 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
           onUnderline={() => addMark('underline')}
           onClose={() => { setDictPopup(null); setWordPopup(null); }}
         />
+      )}
+
+      {/* Record popup - 하이라이트 완료 후 녹음 시작 */}
+      {recordPopup && containerRef.current && (
+        <div className="absolute z-50" style={{ left: recordPopup.x, top: recordPopup.y }}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 min-w-[200px]">
+            <p className="text-xs text-gray-600 mb-3 text-center">하이라이트한 부분을 소리 내어 읽어보세요!</p>
+
+            {!isRecording && !audioURL && (
+              <button onClick={startRecording} className="w-full py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold hover:from-red-600 hover:to-red-700 transition flex items-center justify-center gap-2">
+                <span className="text-lg">🎤</span>
+                녹음 시작
+              </button>
+            )}
+
+            {isRecording && (
+              <button onClick={stopRecording} className="w-full py-2.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl font-bold hover:from-gray-600 hover:to-gray-700 transition flex items-center justify-center gap-2">
+                <span className="text-lg animate-pulse">⏹️</span>
+                녹음 중지
+              </button>
+            )}
+
+            {audioURL && (
+              <div className="space-y-2">
+                <audio src={audioURL} controls className="w-full" />
+                <button onClick={closeRecordPopup} className="w-full py-2 bg-blue-500 text-white rounded-xl text-sm font-bold hover:bg-blue-600 transition">
+                  완료
+                </button>
+              </div>
+            )}
+
+            <button onClick={closeRecordPopup} className="w-full mt-2 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition">
+              건너뛰기
+            </button>
+          </div>
+        </div>
       )}
 
       {/* 나가기 버튼 (고정 위치) - iframe 내부에서는 숨김 */}
