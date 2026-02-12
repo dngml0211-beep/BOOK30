@@ -1439,6 +1439,9 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   const [audioURL, setAudioURL] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState(null);
+  const [dragEnd, setDragEnd] = useState(null);
   const textLayerRef = useRef(null);
   const highlightLayerRef = useRef(null);
   const pageWrapperRef = useRef(null);
@@ -1634,27 +1637,74 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   }, [highlights, page, penMode]);
 
   // ── Text layer click handler ──
-  const handleTextLayerClick = useCallback((e) => {
+  // ── 드래그 형광펜 기능 ──
+  const handlePenPointerDown = useCallback((e) => {
     if (!penMode) return;
-    e.stopPropagation();
     const target = e.target;
     if (target.tagName !== 'SPAN' || !target.parentElement?.classList.contains('textLayer')) return;
-    const result = getWordAtPoint(target, e.clientX, e.clientY);
-    if (!result) return;
-    const cr = containerRef.current?.getBoundingClientRect();
-    if (!cr) return;
-    setDictPopup(null);
-    setWordPopup({
-      word: result.word,
-      rect: { top: result.rect.top, bottom: result.rect.bottom, left: result.rect.left, right: result.rect.right, width: result.rect.width, height: result.rect.height },
-      pageNum: page,
-      spanIdx: parseInt(target.dataset.idx),
-      start: result.start,
-      end: result.end,
-      x: e.clientX - cr.left,
-      y: e.clientY - cr.top
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragStart({ span: target, idx: parseInt(target.dataset.idx) });
+    setDragEnd({ span: target, idx: parseInt(target.dataset.idx) });
+  }, [penMode]);
+
+  const handlePenPointerMove = useCallback((e) => {
+    if (!isDragging || !penMode) return;
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    if (target?.tagName === 'SPAN' && target.parentElement?.classList.contains('textLayer')) {
+      setDragEnd({ span: target, idx: parseInt(target.dataset.idx) });
+    }
+  }, [isDragging, penMode]);
+
+  const handlePenPointerUp = useCallback((e) => {
+    if (!isDragging || !penMode || !dragStart || !dragEnd) {
+      setIsDragging(false);
+      return;
+    }
+
+    const startIdx = Math.min(dragStart.idx, dragEnd.idx);
+    const endIdx = Math.max(dragStart.idx, dragEnd.idx);
+
+    // 드래그한 모든 span을 하이라이트로 저장
+    setHighlights(prev => {
+      const next = { ...prev };
+      if (!next[page]) next[page] = [];
+
+      for (let i = startIdx; i <= endIdx; i++) {
+        const span = textLayerRef.current?.querySelector(`span[data-idx="${i}"]`);
+        if (span) {
+          const text = span.textContent;
+          const exists = next[page].some(h => h.spanIdx === i && h.start === 0 && h.end === text.length);
+          if (!exists) {
+            next[page].push({
+              spanIdx: i,
+              start: 0,
+              end: text.length,
+              word: text,
+              type: 'highlight'
+            });
+          }
+        }
+      }
+
+      saveHighlights(fileName, next);
+      return next;
     });
-  }, [penMode, page]);
+
+    // 녹음 팝업 표시
+    const cr = containerRef.current?.getBoundingClientRect();
+    if (cr) {
+      setRecordPopup({
+        x: e.clientX - cr.left,
+        y: e.clientY - cr.top + 40,
+        text: '하이라이트 완료!'
+      });
+    }
+
+    setIsDragging(false);
+    setDragStart(null);
+    setDragEnd(null);
+  }, [isDragging, penMode, dragStart, dragEnd, page, fileName]);
 
   // ── Add highlight / underline ──
   const addMark = useCallback((type) => {
@@ -1834,41 +1884,16 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
           <div ref={highlightLayerRef} className="highlightLayer" />
           <div ref={textLayerRef}
                className={`textLayer ${penMode ? 'active' : ''}`}
-               onClick={handleTextLayerClick}
-               style={{ pointerEvents: penMode ? 'auto' : 'none' }} />
+               onPointerDown={handlePenPointerDown}
+               onPointerMove={handlePenPointerMove}
+               onPointerUp={handlePenPointerUp}
+               style={{ pointerEvents: penMode ? 'auto' : 'none', touchAction: 'none' }} />
         </div>
       </div>
 
       {/* Pen mode indicator */}
       {penMode && (
-        <div className="pen-indicator">🖊️ 펜 모드 ON</div>
-      )}
-
-      {/* Word popup */}
-      {penMode && wordPopup && !dictPopup && containerRef.current && (
-        <WordPopup
-          word={wordPopup.word}
-          rect={wordPopup.rect}
-          containerRect={containerRef.current.getBoundingClientRect()}
-          onHighlight={() => addMark('highlight')}
-          onUnderline={() => addMark('underline')}
-          onDict={() => {
-            setDictPopup({ word: wordPopup.word, rect: wordPopup.rect });
-          }}
-          onClose={() => setWordPopup(null)}
-        />
-      )}
-
-      {/* Dict popup */}
-      {penMode && dictPopup && containerRef.current && (
-        <DictPopup
-          word={dictPopup.word}
-          rect={dictPopup.rect}
-          containerRect={containerRef.current.getBoundingClientRect()}
-          onHighlight={() => addMark('highlight')}
-          onUnderline={() => addMark('underline')}
-          onClose={() => { setDictPopup(null); setWordPopup(null); }}
-        />
+        <div className="pen-indicator">🖊️ 드래그로 형광펜 칠하기</div>
       )}
 
       {/* Record popup - 하이라이트 완료 후 녹음 시작 */}
