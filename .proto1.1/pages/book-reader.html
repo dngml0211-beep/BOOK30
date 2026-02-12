@@ -9,6 +9,46 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+  import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+  import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+  import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDSKq0BmjLk93kZtgx2-9alTOPJv8UfowM",
+    authDomain: "bookclub30-df082.firebaseapp.com",
+    projectId: "bookclub30-df082",
+    storageBucket: "bookclub30-df082.firebasestorage.app",
+    messagingSenderId: "974287877939",
+    appId: "1:974287877939:web:69d5472c2c5cd1da367046"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+  const auth = getAuth(app);
+
+  let currentUser = null;
+  await signInAnonymously(auth).then((userCredential) => {
+    currentUser = userCredential.user;
+    console.log('✅ Firebase 익명 로그인 완료:', currentUser.uid);
+  }).catch((error) => {
+    console.error('❌ Firebase 로그인 실패:', error);
+  });
+
+  // Firebase 함수들을 window에 노출
+  window.firebaseDB = db;
+  window.firebaseStorage = storage;
+  window.firebaseAuth = auth;
+  window.firebaseUser = currentUser;
+  window.firebaseModules = {
+    collection, addDoc, query, where, getDocs, deleteDoc, doc,
+    ref, uploadBytes, getDownloadURL, deleteObject
+  };
+  console.log('✅ Firebase 초기화 완료');
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 html,body,#root{width:100%;height:100%;overflow:hidden;background:#fff}
@@ -274,7 +314,7 @@ function saveHighlights(bookName, data) {
   } catch(e) {}
 }
 
-// 녹음 저장/로드
+// 녹음 저장/로드 (localStorage - 빠른 초기 로드용)
 function loadRecordings(bookName) {
   try {
     const raw = localStorage.getItem('bc3_recordings_' + bookName);
@@ -284,12 +324,156 @@ function loadRecordings(bookName) {
     return {};
   }
 }
+
+// localStorage 저장 (동기 백업)
 function saveRecordings(bookName, data) {
   try {
     localStorage.setItem('bc3_recordings_' + bookName, JSON.stringify(data));
-    console.log('✅ 녹음 저장됨:', Object.keys(data).length, '페이지');
+    console.log('✅ localStorage 저장됨:', Object.keys(data).length, '페이지');
   } catch(e) {
     console.error('saveRecordings error', e);
+  }
+}
+
+// Firebase에서 녹음 로드 (비동기)
+async function loadRecordingsFromFirebase(bookName) {
+  try {
+    if (!window.firebaseDB) {
+      console.warn('⚠️ Firebase 미초기화, localStorage 사용');
+      return loadRecordings(bookName);
+    }
+
+    console.log('📥 Firebase 로드 시작:', bookName);
+    const { collection, query, where, getDocs } = window.firebaseModules;
+
+    const q = query(
+      collection(window.firebaseDB, 'recordings'),
+      where('bookName', '==', bookName)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const recordings = {};
+
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      const pageNum = data.pageNum;
+
+      if (!recordings[pageNum]) {
+        recordings[pageNum] = [];
+      }
+
+      recordings[pageNum].push({
+        id: docSnapshot.id,
+        pageNum: data.pageNum,
+        centerX: data.centerX,
+        centerY: data.centerY,
+        path: data.path,
+        audioData: data.audioURL, // Firebase Storage URL
+        audioPath: data.audioPath,
+        duration: data.duration,
+        createdAt: data.createdAt,
+        timestamp: data.timestamp
+      });
+    });
+
+    console.log('✅ Firebase 로드 완료:', Object.keys(recordings).length, '페이지');
+
+    // localStorage에도 백업
+    saveRecordings(bookName, recordings);
+
+    return recordings;
+  } catch (error) {
+    console.error('❌ Firebase 로드 실패:', error);
+    return loadRecordings(bookName); // 폴백
+  }
+}
+
+// Firebase에 녹음 저장 (비동기)
+async function saveRecordingToFirebase(bookName, pageNum, recordingData) {
+  try {
+    if (!window.firebaseDB || !window.firebaseStorage) {
+      console.warn('⚠️ Firebase 미초기화');
+      return null;
+    }
+
+    console.log('💾 Firebase 저장 시작:', { bookName, pageNum });
+    const { collection, addDoc } = window.firebaseModules;
+    const { ref, uploadBytes, getDownloadURL } = window.firebaseModules;
+
+    // base64를 Blob으로 변환
+    function dataURLtoBlob(dataURL) {
+      const arr = dataURL.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    }
+
+    // 1. 오디오 파일을 Storage에 업로드
+    const audioBlob = dataURLtoBlob(recordingData.audioData);
+    const audioPath = `recordings/${bookName}/page${pageNum}/${recordingData.timestamp}.webm`;
+    const audioRef = ref(window.firebaseStorage, audioPath);
+
+    await uploadBytes(audioRef, audioBlob);
+    const audioURL = await getDownloadURL(audioRef);
+    console.log('✅ 오디오 업로드 완료:', audioURL);
+
+    // 2. 메타데이터를 Firestore에 저장
+    const docData = {
+      bookName,
+      pageNum,
+      centerX: recordingData.centerX,
+      centerY: recordingData.centerY,
+      path: recordingData.path,
+      audioURL,
+      audioPath,
+      duration: recordingData.duration,
+      createdAt: recordingData.createdAt,
+      timestamp: recordingData.timestamp,
+      userId: window.firebaseUser?.uid || 'anonymous'
+    };
+
+    const docRef = await addDoc(collection(window.firebaseDB, 'recordings'), docData);
+    console.log('✅ Firestore 저장 완료:', docRef.id);
+
+    return { id: docRef.id, ...docData };
+  } catch (error) {
+    console.error('❌ Firebase 저장 실패:', error);
+    return null;
+  }
+}
+
+// Firebase에서 녹음 삭제 (비동기)
+async function deleteRecordingFromFirebase(recordingId, audioPath) {
+  try {
+    if (!window.firebaseDB || !window.firebaseStorage) {
+      console.warn('⚠️ Firebase 미초기화');
+      return false;
+    }
+
+    console.log('🗑️ Firebase 삭제 시작:', recordingId);
+    const { deleteDoc, doc } = window.firebaseModules;
+    const { ref, deleteObject } = window.firebaseModules;
+
+    // 1. Storage에서 오디오 파일 삭제
+    if (audioPath) {
+      const audioRef = ref(window.firebaseStorage, audioPath);
+      await deleteObject(audioRef);
+      console.log('✅ 오디오 삭제 완료');
+    }
+
+    // 2. Firestore에서 메타데이터 삭제
+    await deleteDoc(doc(window.firebaseDB, 'recordings', recordingId));
+    console.log('✅ Firestore 삭제 완료');
+
+    return true;
+  } catch (error) {
+    console.error('❌ Firebase 삭제 실패:', error);
+    return false;
   }
 }
 
@@ -1488,6 +1672,50 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     setTimeout(() => setToastMsg(null), 1800);
   }, [captureCurrentPage, fileName, page]);
 
+  // Firebase에서 녹음 데이터 로드
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchRecordings() {
+      try {
+        // Firebase 초기화 대기
+        await new Promise(resolve => {
+          if (window.firebaseDB) {
+            resolve();
+          } else {
+            const checkInterval = setInterval(() => {
+              if (window.firebaseDB) {
+                clearInterval(checkInterval);
+                resolve();
+              }
+            }, 100);
+            // 최대 5초 대기
+            setTimeout(() => {
+              clearInterval(checkInterval);
+              resolve();
+            }, 5000);
+          }
+        });
+
+        if (!mounted) return;
+
+        const firebaseRecordings = await loadRecordingsFromFirebase(fileName);
+        if (mounted && firebaseRecordings && Object.keys(firebaseRecordings).length > 0) {
+          setRecordings(firebaseRecordings);
+          console.log('✅ Firebase 데이터로 동기화 완료');
+        }
+      } catch (error) {
+        console.error('Firebase 로드 중 오류:', error);
+      }
+    }
+
+    fetchRecordings();
+
+    return () => {
+      mounted = false;
+    };
+  }, [fileName]);
+
   const handleStartWrite = useCallback(() => {
     // 감상문 작성 전용 페이지로 이동 (통일된 경험 제공)
     sessionStorage.setItem('referrer', window.location.href);
@@ -1906,7 +2134,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
 
         // audioBlob을 base64로 변환하여 저장
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
           console.log('📝 FileReader 완료, base64 길이:', reader.result?.length);
           const base64Audio = reader.result;
 
@@ -1921,16 +2149,26 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
 
             console.log('💾 저장할 녹음 데이터:', recordingData);
 
+            // Firebase에 저장 (비동기)
+            const firebaseResult = await saveRecordingToFirebase(fileName, page, recordingData);
+            if (firebaseResult) {
+              // Firebase 저장 성공 시 URL로 변경
+              recordingData.audioData = firebaseResult.audioURL;
+              recordingData.audioPath = firebaseResult.audioPath;
+              recordingData.id = firebaseResult.id;
+            }
+
             setRecordings(prev => {
               const next = { ...prev };
               if (!next[page]) next[page] = [];
               next[page] = [...next[page], recordingData];
               console.log('💾 업데이트된 recordings:', next);
+              // localStorage에도 백업 저장
               saveRecordings(fileName, next);
               return next;
             });
 
-            console.log('✅ 녹음 저장 완료');
+            console.log('✅ 녹음 저장 완료 (Firebase + localStorage)');
           } else {
             console.error('❌ currentRecordingRef.current가 없습니다!');
           }
@@ -2210,16 +2448,28 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
               <audio src={playingRecording.audioData} controls autoPlay className="w-full" />
 
               <div className="flex gap-2">
-                <button onClick={() => {
-                  setRecordings(prev => {
-                    const next = { ...prev };
-                    if (next[page]) {
-                      next[page] = next[page].filter(r => r.timestamp !== playingRecording.timestamp);
-                      saveRecordings(fileName, next);
+                <button onClick={async () => {
+                  try {
+                    // Firebase에서 삭제
+                    if (playingRecording.id && playingRecording.audioPath) {
+                      await deleteRecordingFromFirebase(playingRecording.id, playingRecording.audioPath);
                     }
-                    return next;
-                  });
-                  setPlayingRecording(null);
+
+                    // 로컬 state 업데이트
+                    setRecordings(prev => {
+                      const next = { ...prev };
+                      if (next[page]) {
+                        next[page] = next[page].filter(r => r.timestamp !== playingRecording.timestamp);
+                        saveRecordings(fileName, next); // localStorage도 업데이트
+                      }
+                      return next;
+                    });
+                    setPlayingRecording(null);
+                    console.log('✅ 녹음 삭제 완료 (Firebase + localStorage)');
+                  } catch (error) {
+                    console.error('녹음 삭제 실패:', error);
+                    alert('녹음 삭제에 실패했습니다.');
+                  }
                 }} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100 transition">
                   🗑️ 삭제
                 </button>
