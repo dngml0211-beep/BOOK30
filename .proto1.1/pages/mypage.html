@@ -5242,9 +5242,9 @@
                         <div class="flex items-center justify-between mb-3">
                             <p class="text-xs text-gray-400">총 <strong class="text-gray-600">24</strong>개 작품</p>
                             <div class="flex items-center gap-2 text-xs">
-                                <button class="gallery-sort active" data-sort="recent">최신순</button>
+                                <button class="gallery-sort active" data-sort="recent" onclick="sortGallery('recent')">최신순</button>
                                 <span class="text-gray-300">|</span>
-                                <button class="gallery-sort" data-sort="likes">좋아요순</button>
+                                <button class="gallery-sort" data-sort="likes" onclick="sortGallery('likes')">좋아요순</button>
                             </div>
                         </div>
                         <!-- 그리드 -->
@@ -6679,6 +6679,14 @@
             galleryFilter = filter;
             document.querySelectorAll('.gallery-filter').forEach(f => f.classList.remove('active'));
             document.querySelector(`.gallery-filter[data-filter="${filter}"]`).classList.add('active');
+            renderMyGallery();
+        }
+
+        // === 정렬 ===
+        function sortGallery(sort) {
+            gallerySort = sort;
+            document.querySelectorAll('#gtab-my .gallery-sort').forEach(s => s.classList.remove('active'));
+            document.querySelector(`#gtab-my .gallery-sort[data-sort="${sort}"]`).classList.add('active');
             renderMyGallery();
         }
 
