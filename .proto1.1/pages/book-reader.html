@@ -274,6 +274,25 @@ function saveHighlights(bookName, data) {
   } catch(e) {}
 }
 
+// 녹음 저장/로드
+function loadRecordings(bookName) {
+  try {
+    const raw = localStorage.getItem('bc3_recordings_' + bookName);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) {
+    console.error('loadRecordings error', e);
+    return {};
+  }
+}
+function saveRecordings(bookName, data) {
+  try {
+    localStorage.setItem('bc3_recordings_' + bookName, JSON.stringify(data));
+    console.log('✅ 녹음 저장됨:', Object.keys(data).length, '페이지');
+  } catch(e) {
+    console.error('saveRecordings error', e);
+  }
+}
+
 /* ══════════════════════════════════════════════
    FULLSCREEN UTIL
    ══════════════════════════════════════════════ */
@@ -1438,9 +1457,12 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioURL, setAudioURL] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0); // 녹음 시간 (초)
+  const [recordings, setRecordings] = useState(() => loadRecordings(fileName)); // 저장된 녹음들
+  const [playingRecording, setPlayingRecording] = useState(null); // 재생 중인 녹음
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
+  const currentRecordingRef = useRef(null); // 현재 녹음 중인 영역 정보
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(null);
   const [dragEnd, setDragEnd] = useState(null);
@@ -1735,19 +1757,36 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
       return;
     }
 
-    // 녹음 팝업 표시
-    const cr = containerRef.current?.getBoundingClientRect();
-    if (cr && drawingPathRef.current.length > 0) {
-      setRecordPopup({
-        x: e.clientX - cr.left,
-        y: e.clientY - cr.top + 40,
-        text: '하이라이트 완료!'
-      });
+    // 현재 그린 영역의 중심점 계산
+    const path = drawingPathRef.current;
+    if (path.length > 0) {
+      const xs = path.map(p => p.x);
+      const ys = path.map(p => p.y);
+      const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+      const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+
+      // 현재 녹음 영역 정보 저장
+      currentRecordingRef.current = {
+        pageNum: page,
+        centerX,
+        centerY,
+        path: [...path],
+        timestamp: Date.now()
+      };
+
+      // 녹음 팝업 표시
+      const cr = containerRef.current?.getBoundingClientRect();
+      if (cr) {
+        setRecordPopup({
+          x: e.clientX - cr.left,
+          y: e.clientY - cr.top + 40,
+          text: '하이라이트 완료!'
+        });
+      }
     }
 
     setIsDragging(false);
-    drawingPathRef.current = [];
-  }, [isDragging, penMode]);
+  }, [isDragging, penMode, page]);
 
   // ── Add highlight / underline ──
   const addMark = useCallback((type) => {
@@ -1826,11 +1865,39 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         console.log('⏹️ 녹음 중지, 총', audioChunksRef.current.length, '개 청크');
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
         console.log('✅ 오디오 URL 생성:', audioUrl);
+
+        // audioBlob을 base64로 변환하여 저장
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Audio = reader.result;
+
+          // 녹음 데이터 저장
+          if (currentRecordingRef.current) {
+            const recordingData = {
+              ...currentRecordingRef.current,
+              audioData: base64Audio,
+              duration: recordingTime,
+              createdAt: new Date().toISOString()
+            };
+
+            setRecordings(prev => {
+              const next = { ...prev };
+              if (!next[page]) next[page] = [];
+              next[page] = [...next[page], recordingData];
+              saveRecordings(fileName, next);
+              return next;
+            });
+
+            console.log('✅ 녹음 저장 완료');
+          }
+        };
+        reader.readAsDataURL(audioBlob);
+
         setAudioURL(audioUrl);
         stream.getTracks().forEach(track => track.stop());
       };
@@ -1848,7 +1915,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
         alert('녹음을 시작할 수 없습니다: ' + err.message);
       }
     }
-  }, []);
+  }, [page, fileName, recordingTime]);
 
   const stopRecording = useCallback(() => {
     console.log('⏹️ 녹음 중지 버튼 클릭됨');
@@ -1867,6 +1934,8 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     setAudioURL(null);
     setIsRecording(false);
     setRecordingTime(0);
+    currentRecordingRef.current = null;
+    drawingPathRef.current = [];
   }, []);
 
   // Keyboard nav
@@ -1991,6 +2060,37 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
                onPointerMove={handlePenPointerMove}
                onPointerUp={handlePenPointerUp}
                style={{ pointerEvents: penMode ? 'auto' : 'none', touchAction: 'none', zIndex: 20 }} />
+
+          {/* Recording markers */}
+          {recordings[page] && recordings[page].map((rec, idx) => (
+            <div key={idx}
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   setPlayingRecording(rec);
+                 }}
+                 style={{
+                   position: 'absolute',
+                   left: rec.centerX,
+                   top: rec.centerY,
+                   transform: 'translate(-50%, -50%)',
+                   width: '36px',
+                   height: '36px',
+                   borderRadius: '50%',
+                   background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                   fontSize: '18px',
+                   cursor: 'pointer',
+                   boxShadow: '0 4px 12px rgba(249, 115, 22, 0.4)',
+                   zIndex: 30,
+                   pointerEvents: 'auto',
+                   transition: 'all 0.2s'
+                 }}
+                 className="hover:scale-110 active:scale-95">
+              🎤
+            </div>
+          ))}
         </div>
       </div>
 
@@ -2037,6 +2137,49 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
             <button onClick={(e) => { e.stopPropagation(); closeRecordPopup(); }} className="w-full mt-2 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition">
               건너뛰기
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Playing recording popup - 저장된 녹음 재생 */}
+      {playingRecording && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setPlayingRecording(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-5 max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                🎤 녹음 듣기
+              </h3>
+              <button onClick={() => setPlayingRecording(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>⏱️ {Math.floor(playingRecording.duration / 60)}분 {playingRecording.duration % 60}초</span>
+                <span>•</span>
+                <span>📅 {new Date(playingRecording.createdAt).toLocaleDateString()}</span>
+              </div>
+
+              <audio src={playingRecording.audioData} controls autoPlay className="w-full" />
+
+              <div className="flex gap-2">
+                <button onClick={() => {
+                  setRecordings(prev => {
+                    const next = { ...prev };
+                    if (next[page]) {
+                      next[page] = next[page].filter(r => r.timestamp !== playingRecording.timestamp);
+                      saveRecordings(fileName, next);
+                    }
+                    return next;
+                  });
+                  setPlayingRecording(null);
+                }} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100 transition">
+                  🗑️ 삭제
+                </button>
+                <button onClick={() => setPlayingRecording(null)} className="flex-1 py-2 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition">
+                  닫기
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
