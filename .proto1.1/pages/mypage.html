@@ -4275,7 +4275,15 @@
         /* 상장 카드 슬라이더 */
         .fame-scroll-wrap {
             overflow-x: auto;
+            overflow-y: hidden;
             padding-bottom: 4px;
+            scroll-behavior: smooth;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            cursor: grab;
+        }
+        .fame-scroll-wrap:active {
+            cursor: grabbing;
         }
         .fame-scroll-wrap::-webkit-scrollbar { display: none; }
         .fame-scroll-track {
@@ -4294,6 +4302,7 @@
             text-align: center;
             position: relative;
             transition: all 0.2s;
+            scroll-snap-align: start;
         }
         .fame-award-card:hover {
             transform: translateY(-2px);
