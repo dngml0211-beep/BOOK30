@@ -3418,85 +3418,67 @@
             });
         }
 
-        // ===== 뷰어에서 돌아왔을 때 진행률 체크 =====
+        /**
+         * 뷰어에서 돌아왔을 때 진행률 체크
+         */
         function checkViewerProgress() {
             const readingProgress = sessionStorage.getItem('readingProgress');
             const bookJustCompleted = sessionStorage.getItem('bookJustCompleted');
 
             if (readingProgress) {
                 const progress = JSON.parse(readingProgress);
-                console.log('[Home] Reading progress detected:', progress);
-
-                // 현재 책 정보 업데이트
                 const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
-                if (currentBook.id === progress.bookId) {
-                    // 진행률 표시 업데이트
-                    const progressFill = document.getElementById('progress-fill');
-                    if (progressFill) {
-                        progressFill.style.width = `${progress.percentage}%`;
-                    }
 
-                    // 페이지 정보 업데이트
+                if (currentBook.id === progress.bookId) {
+                    const progressFill = document.getElementById('progress-fill');
                     const currentPageEl = document.getElementById('current-page');
                     const totalPagesEl = document.getElementById('total-pages');
+
+                    if (progressFill) progressFill.style.width = `${progress.percentage}%`;
                     if (currentPageEl) currentPageEl.textContent = progress.currentPage;
                     if (totalPagesEl) totalPagesEl.textContent = progress.totalPages;
-
-                    console.log('[Home] Progress updated on UI');
                 }
             }
 
             if (bookJustCompleted === 'true') {
                 const completedBook = JSON.parse(sessionStorage.getItem('lastCompletedBook') || '{}');
-                console.log('[Home] Book just completed:', completedBook);
-
-                // 완독 플래그 제거
                 sessionStorage.removeItem('bookJustCompleted');
 
-                // 완독 뱃지 표시
                 showCompletionBadge();
 
-                // 완독 알림 표시 (옵션)
                 setTimeout(() => {
                     alert(`🎉 "${completedBook.bookTitle}" 완독을 축하합니다!`);
                 }, 500);
             }
 
-            // 기존 완독 상태 체크 (페이지 로드 시)
             checkExistingCompletion();
         }
 
-        // ===== 완독 뱃지 표시 =====
+        /**
+         * 완독 뱃지 표시
+         */
         function showCompletionBadge() {
             const spreadCover = document.getElementById('spread-cover');
             if (!spreadCover) return;
 
-            // 기존 뱃지 제거
             const existingBadge = spreadCover.querySelector('.completion-badge');
-            if (existingBadge) {
-                existingBadge.remove();
-            }
+            if (existingBadge) existingBadge.remove();
 
-            // 새 뱃지 추가
             const badge = document.createElement('div');
             badge.className = 'completion-badge';
             badge.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>완독</span>';
             spreadCover.appendChild(badge);
-
-            console.log('[Home] Completion badge added');
         }
 
-        // ===== 기존 완독 상태 체크 =====
+        /**
+         * 기존 완독 상태 체크
+         */
         function checkExistingCompletion() {
             const bookCompletions = JSON.parse(sessionStorage.getItem('bookCompletions') || '[]');
             const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
-
-            // 현재 책이 완독 목록에 있는지 확인
             const isCompleted = bookCompletions.some(comp => comp.bookId === currentBook.id);
 
-            if (isCompleted) {
-                showCompletionBadge();
-            }
+            if (isCompleted) showCompletionBadge();
         }
 
         // 게이지 트랜지션 완료 후 세그먼트 색상 재계산

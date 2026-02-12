@@ -36,10 +36,10 @@
         .font-noto { font-family: 'Noto Sans KR', sans-serif; }
         body { background: linear-gradient(180deg, #FFF7ED 0%, #FEF3C7 50%, #ECFDF5 100%); }
 
-        /* iframe 컨테이너 - 전체 화면 */
+        /* iframe 컨테이너 - 전체 화면 (고정) */
         .viewer-container {
             position: fixed;
-            top: 50px;
+            top: 0;
             left: 0;
             right: 0;
             bottom: 0;
@@ -48,9 +48,9 @@
         }
         .viewer-frame {
             width: 100%;
-            height: calc(100% + 50px);
+            height: 100%;
             border: none;
-            margin-top: -50px;
+            margin-top: 0;
         }
 
         /* 로딩 스피너 */
@@ -97,7 +97,7 @@
             transform: scale(0.95);
         }
 
-        /* 헤더 자동 숨김 */
+        /* 헤더 토글 */
         header {
             transition: transform 0.3s ease;
         }
@@ -105,12 +105,7 @@
             transform: translateY(-100%);
         }
 
-        /* 뷰어 컨테이너 전체 화면 모드 */
-        .viewer-container.fullscreen {
-            top: 0;
-        }
-
-        /* 플로팅 완독 버튼 (헤더 숨김 시) */
+        /* 플로팅 완독 버튼 */
         .floating-test-btn {
             position: fixed;
             bottom: 20px;
@@ -144,12 +139,6 @@
         }
 
         @media (max-width: 640px) {
-            .viewer-container {
-                top: 48px;
-            }
-            .viewer-container.fullscreen {
-                top: 0;
-            }
             .floating-test-btn {
                 bottom: 80px;
                 right: 16px;
@@ -230,34 +219,33 @@
 
     <script>
         /**
+         * DOM 요소 참조
+         */
+        const frame = document.getElementById('book-viewer-frame');
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const errorMessage = document.getElementById('error-message');
+        const header = document.querySelector('header');
+        const floatingBtn = document.getElementById('floating-test-btn');
+        let headerVisible = true;
+
+        /**
          * postMessage 통신 수신
          */
         window.addEventListener('message', (event) => {
             const { type, data } = event.data;
-            console.log('[Viewer] Message received:', type, data);
 
             switch (type) {
-                case 'VIEWER_READY':
-                    console.log('[Viewer] Book viewer is ready');
-                    break;
-
                 case 'PAGE_CHANGED':
-                    console.log('[Viewer] Page changed:', data);
                     handlePageProgress(data);
                     break;
 
                 case 'BOOK_COMPLETED':
-                    console.log('[Viewer] Book reading completed:', data);
                     handleBookCompletion(data);
                     break;
 
                 case 'UI_VISIBILITY_CHANGED':
-                    console.log('[Viewer] UI visibility changed:', data);
                     handleUIVisibilityChange(data.visible);
                     break;
-
-                default:
-                    console.warn('[Viewer] Unknown message type:', type);
             }
         });
 
@@ -281,10 +269,7 @@
             currentBook.lastRead = progressData.lastRead;
             sessionStorage.setItem('currentBook', JSON.stringify(currentBook));
 
-            // 읽기 진행률 저장
             sessionStorage.setItem('readingProgress', JSON.stringify(progressData));
-
-            console.log('[Viewer] Progress updated:', progressData);
         }
 
         /**
@@ -299,24 +284,19 @@
                 pageCount: data.pageCount || 0
             };
 
-            // sessionStorage에 저장
             const completions = JSON.parse(sessionStorage.getItem('bookCompletions') || '[]');
             completions.push(completionData);
             sessionStorage.setItem('bookCompletions', JSON.stringify(completions));
 
-            // 완독 플래그 설정
             sessionStorage.setItem('bookJustCompleted', 'true');
             sessionStorage.setItem('lastCompletedBook', JSON.stringify(completionData));
-
-            console.log('[Viewer] Book completion saved:', completionData);
         }
 
         /**
-         * 완독 테스트 (개발용)
+         * 완독 테스트
          */
         function testBookCompletion() {
             const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
-
             const testData = {
                 bookId: currentBook.id || 'test-book-1',
                 bookTitle: currentBook.title || '테스트 도서',
@@ -325,9 +305,7 @@
                 pageCount: 32
             };
 
-            console.log('[Test] Simulating book completion:', testData);
             handleBookCompletion(testData);
-
             alert('✅ 완독 이벤트가 발생했습니다!\n홈으로 돌아가서 완독 뱃지를 확인하세요.');
         }
 
@@ -335,11 +313,8 @@
          * 챗봇 테스트 패널 토글
          */
         function toggleBuddyTestPanel() {
-            const frame = document.getElementById('book-viewer-frame');
-            if (frame && frame.contentWindow) {
-                frame.contentWindow.postMessage({
-                    type: 'TOGGLE_BUDDY_TEST_PANEL'
-                }, '*');
+            if (frame.contentWindow) {
+                frame.contentWindow.postMessage({ type: 'TOGGLE_BUDDY_TEST_PANEL' }, '*');
             }
         }
 
@@ -355,97 +330,59 @@
         }
 
         /**
-         * iframe 로딩 완료
+         * iframe 이벤트 처리
          */
-        document.getElementById('book-viewer-frame').addEventListener('load', () => {
-            console.log('[Viewer] Book viewer loaded');
-            setTimeout(() => {
-                document.getElementById('loader-overlay').style.display = 'none';
-            }, 500);
+        frame.addEventListener('load', () => {
+            setTimeout(() => loaderOverlay.style.display = 'none', 500);
 
             // 사용자 정보 전달
-            const userInfo = AppState.getUserInfo();
-            const frame = document.getElementById('book-viewer-frame');
-            if (frame && frame.contentWindow) {
+            if (frame.contentWindow) {
                 frame.contentWindow.postMessage({
                     type: 'USER_INFO',
-                    data: userInfo
+                    data: AppState.getUserInfo()
                 }, '*');
             }
         });
 
-        /**
-         * iframe 로딩 에러
-         */
-        document.getElementById('book-viewer-frame').addEventListener('error', () => {
-            console.error('[Viewer] Failed to load book viewer');
-            document.getElementById('loader-overlay').style.display = 'none';
-            document.getElementById('error-message').classList.remove('hidden');
+        frame.addEventListener('error', () => {
+            loaderOverlay.style.display = 'none';
+            errorMessage.classList.remove('hidden');
         });
 
         /**
          * 헤더 토글 기능
          */
-        let headerVisible = true;
-        const header = document.querySelector('header');
-        const viewerContainer = document.getElementById('viewer-container');
-        const floatingBtn = document.getElementById('floating-test-btn');
-
         function showHeader() {
             headerVisible = true;
             header.classList.remove('hidden');
-            viewerContainer.classList.remove('fullscreen');
             floatingBtn.classList.remove('visible');
         }
 
         function hideHeader() {
             headerVisible = false;
             header.classList.add('hidden');
-            viewerContainer.classList.add('fullscreen');
             floatingBtn.classList.add('visible');
         }
 
         function toggleHeader() {
-            if (headerVisible) {
-                hideHeader();
-            } else {
-                showHeader();
-            }
+            headerVisible ? hideHeader() : showHeader();
 
             // iframe UI도 함께 토글
-            const frame = document.getElementById('book-viewer-frame');
-            if (frame && frame.contentWindow) {
-                frame.contentWindow.postMessage({
-                    type: 'TOGGLE_UI'
-                }, '*');
+            if (frame.contentWindow) {
+                frame.contentWindow.postMessage({ type: 'TOGGLE_UI' }, '*');
             }
         }
 
-        // 화면 전체 클릭 시 헤더 토글
-        let clickListenerActive = false;
-
-        // iframe이 로드되면 클릭 감지를 위한 오버레이 추가
+        /**
+         * 클릭 토글 활성화
+         */
         function enableClickToggle() {
-            if (clickListenerActive) return;
-            clickListenerActive = true;
-
-            // iframe 위에 투명 오버레이를 잠깐 보여줬다 숨기는 방식으로 클릭 감지
+            // 외부 영역 클릭 시 헤더 토글
             document.addEventListener('click', (e) => {
-                // 헤더나 버튼 클릭은 무시
                 if (e.target.closest('header') || e.target.closest('.floating-test-btn')) {
                     return;
                 }
                 toggleHeader();
-            });
-
-            // iframe 영역 클릭도 감지
-            window.addEventListener('blur', () => {
-                // iframe 클릭 시 blur 이벤트 발생
-                setTimeout(() => {
-                    if (document.activeElement.tagName === 'IFRAME') {
-                        toggleHeader();
-                    }
-                }, 100);
             });
         }
 
@@ -461,16 +398,13 @@
          * 초기화
          */
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('[Viewer] Book viewer initialized');
-
-            // 책 정보 표시
             const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
+
             if (currentBook.title) {
                 document.getElementById('content-title').textContent = currentBook.title;
                 document.getElementById('content-subtitle').textContent = currentBook.author || 'AI 버디와 함께 읽기';
             }
 
-            // 클릭 토글 활성화
             enableClickToggle();
         });
     </script>

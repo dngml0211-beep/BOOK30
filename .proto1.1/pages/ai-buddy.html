@@ -922,22 +922,22 @@
         }
     }
 
-    // === 새 활동 시작 ===
+    /**
+     * 새 활동 시작
+     */
     function startNewActivity(tool) {
         closeNewActivityModal();
         sessionStorage.setItem('aiBuddyChatState', 'true');
         sessionStorage.setItem('referrer', 'ai-buddy.html');
 
-        // 도구에 따라 통합 뷰어의 적절한 탭으로 이동
-        if (tool === 'question') {
-            // 질문렌즈는 별도 페이지 유지
-            window.location.href = 'question-lens.html';
-        } else if (tool === 'video') {
-            // 영상 리텔링 → 영상뷰어 탭
-            window.location.href = 'book-viewer-integrated.html?viewer=video';
-        } else if (tool === 'debate') {
-            // 독서토론은 별도 페이지 유지
-            window.location.href = 'debate.html';
+        const routes = {
+            'question': 'question-lens.html',
+            'video': 'book-viewer-integrated.html?viewer=video',
+            'debate': 'debate.html'
+        };
+
+        if (routes[tool]) {
+            window.location.href = routes[tool];
         }
     }
 

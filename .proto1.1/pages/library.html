@@ -908,9 +908,9 @@
         document.getElementById('progress-text').textContent = `${completedCount}/${totalCount}권 완료`;
     }
 
-    // ============================================================
-    //  도서 클릭 시 뷰어 열기
-    // ============================================================
+    /**
+     * 도서 클릭 시 뷰어 열기
+     */
     function openBookFromLibrary(bookId, bookTitle, bookAuthor, week) {
         const bookData = {
             id: bookId,
@@ -922,13 +922,8 @@
             timestamp: new Date().toISOString()
         };
 
-        // sessionStorage에 저장
         sessionStorage.setItem('currentBook', JSON.stringify(bookData));
         sessionStorage.setItem('referrer', 'library.html');
-
-        console.log('[Library] Opening book:', bookData);
-
-        // 독서 뷰어로 이동 (깔끔한 버전)
         window.location.href = 'book-viewer-clean.html';
     }
 
