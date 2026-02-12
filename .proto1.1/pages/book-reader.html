@@ -1673,7 +1673,30 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     canvas.height = height;
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
-  }, [canvasRef.current?.style.width, canvasRef.current?.style.height, page]);
+
+    // 저장된 형광펜 다시 그리기
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, width, height);
+
+    const pageRecordings = recordings[page];
+    if (pageRecordings && pageRecordings.length > 0) {
+      console.log('🎨 저장된 형광펜 다시 그리기:', pageRecordings.length, '개');
+      pageRecordings.forEach(rec => {
+        if (rec.path && rec.path.length > 0) {
+          ctx.strokeStyle = 'rgba(255, 237, 74, 0.5)';
+          ctx.lineWidth = 20;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(rec.path[0].x, rec.path[0].y);
+          for (let i = 1; i < rec.path.length; i++) {
+            ctx.lineTo(rec.path[i].x, rec.path[i].y);
+          }
+          ctx.stroke();
+        }
+      });
+    }
+  }, [canvasRef.current?.style.width, canvasRef.current?.style.height, page, recordings]);
 
   // ── Render highlight rectangles ──
   useEffect(() => {
