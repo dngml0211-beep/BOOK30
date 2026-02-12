@@ -1757,22 +1757,24 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
       return;
     }
 
-    // 현재 그린 영역의 중심점 계산
+    // 현재 그린 영역의 위치 계산
     const path = drawingPathRef.current;
     console.log('🖊️ Pen Up - path 길이:', path.length);
     if (path.length > 0) {
       const xs = path.map(p => p.x);
       const ys = path.map(p => p.y);
       const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
-      const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+      const minY = Math.min(...ys);
+      // 텍스트를 가리지 않도록 형광펜 영역 위쪽에 아이콘 배치
+      const iconY = minY - 30;
 
-      console.log('📍 계산된 중심점:', { centerX, centerY, page });
+      console.log('📍 계산된 위치:', { centerX, iconY, page });
 
       // 현재 녹음 영역 정보 저장
       currentRecordingRef.current = {
         pageNum: page,
         centerX,
-        centerY,
+        centerY: iconY,
         path: [...path],
         timestamp: Date.now()
       };
