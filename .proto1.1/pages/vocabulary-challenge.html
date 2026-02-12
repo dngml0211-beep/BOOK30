@@ -38,6 +38,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Common JS -->
+    <script src="../js/common.js"></script>
+
     <style>
         .font-noto { font-family: 'Noto Sans KR', sans-serif; }
 
@@ -615,7 +618,7 @@
 
         function exitChallenge() {
             if (confirm('챌린지를 그만둘까요?')) {
-                window.location.href = 'home.html';
+                goBack();
             }
         }
 
