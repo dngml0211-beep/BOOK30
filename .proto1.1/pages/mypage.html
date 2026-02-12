@@ -3438,6 +3438,112 @@
             color: #9ca3af;
         }
 
+        /* === 친구 작품 카드 === */
+        .friend-work-card {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid #f3f4f6;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+        }
+        .friend-work-card.highlight {
+            border-color: #FFA726;
+            box-shadow: 0 4px 20px rgba(255, 167, 38, 0.15);
+        }
+        .friend-work-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+        }
+        .friend-work-card .friend-header {
+            padding: 10px 12px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .friend-work-card.highlight .friend-header {
+            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+        }
+        .friend-work-card .friend-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .friend-work-card .friend-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .friend-work-card .friend-details {
+            flex: 1;
+        }
+        .friend-work-card .friend-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .friend-work-card .friend-time {
+            font-size: 10px;
+            color: #9ca3af;
+        }
+        .friend-work-card .following-badge {
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            background: #FFF3E0;
+            color: #FFA726;
+            border: 1px solid #FFD54F;
+        }
+        .friend-work-card .work-cover {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 2;
+            overflow: hidden;
+            background: #f3f4f6;
+        }
+        .friend-work-card .work-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+        }
+        .friend-work-card:hover .work-cover img {
+            transform: scale(1.05);
+        }
+        .friend-work-card .work-footer {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .friend-work-card .like-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #9ca3af;
+            transition: color 0.2s;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .friend-work-card .like-btn.liked {
+            color: #EF4444;
+        }
+        .friend-work-card .like-btn:hover {
+            color: #EF4444;
+        }
+
         /* === 갤러리 피드 (릴스 스타일 그리드) === */
         .gallery-feed {
             display: grid;
@@ -5256,7 +5362,7 @@
                     <!-- 친구 작품 탭 -->
                     <div id="gtab-friends" class="gallery-content hidden">
                         <div class="text-xs text-gray-400 mb-3"><strong class="text-gray-600">관심친구 작품</strong>이 먼저 보여요</div>
-                        <div class="gallery-feed" id="friends-gallery-feed">
+                        <div class="gallery-grid" id="friends-gallery-feed">
                             <!-- JS로 렌더링 -->
                         </div>
                     </div>
@@ -6785,37 +6891,58 @@
             const feed = document.getElementById('friends-gallery-feed');
             feed.innerHTML = friendsWorks.map(w => {
                 const highlightClass = w.following ? 'highlight' : '';
-                const headerBgClass = w.following ? 'highlight-bg' : '';
-                const followBtnClass = w.following ? 'following' : '';
-                const followBtnText = w.following ? '<i class="fa-solid fa-check"></i> 관심친구' : '<i class="fa-solid fa-plus"></i> 관심+';
                 const likedClass = w.liked ? 'liked' : '';
                 const heartIcon = w.liked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
 
                 return `
-                <div class="feed-card ${highlightClass}">
-                    <div class="feed-card-header ${headerBgClass}">
-                        <div class="flex items-center gap-2">
-                            <div class="feed-card-avatar bg-gradient-to-br ${w.avatarBg}">${w.avatar}</div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">${w.name}</p>
-                                <p class="text-[10px] text-gray-400">${w.class} · ${w.time}</p>
+                <div class="friend-work-card ${highlightClass}" onclick="openWork(${w.id})">
+                    <div class="friend-header">
+                        <div class="friend-info">
+                            <div class="friend-avatar bg-gradient-to-br ${w.avatarBg}">${w.avatar}</div>
+                            <div class="friend-details">
+                                <div class="friend-name">${w.name}</div>
+                                <div class="friend-time">${w.time}</div>
                             </div>
                         </div>
-                        <button class="follow-btn ${followBtnClass}" onclick="toggleFollowBtn(this)">${followBtnText}</button>
+                        ${w.following ? '<span class="following-badge">⭐ 관심친구</span>' : ''}
                     </div>
-                    <div class="feed-card-visual ${w.bg}">${w.emoji}</div>
-                    <div class="feed-card-body">
-                        <div class="feed-card-actions">
-                            <button class="feed-card-action ${likedClass}"><i class="${heartIcon}"></i> ${w.likes}</button>
-                            <button class="feed-card-action"><i class="fa-regular fa-comment"></i> ${w.comments}</button>
-                            <span class="ml-auto text-[9px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">${w.typeLabel}</span>
+                    <div class="work-cover">
+                        <div class="${w.bg}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                            <span style="font-size:80px;">${w.emoji}</span>
                         </div>
-                        <p class="text-sm font-medium text-gray-800">${w.title}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">${w.desc}</p>
+                    </div>
+                    <div class="work-footer">
+                        <button class="like-btn ${likedClass}" onclick="event.stopPropagation(); toggleLike(this, ${w.id})">
+                            <i class="${heartIcon}"></i>
+                            <span>${w.likes}</span>
+                        </button>
                     </div>
                 </div>
                 `;
             }).join('');
+        }
+
+        // === 좋아요 토글 ===
+        function toggleLike(btn, workId) {
+            const work = friendsWorks.find(w => w.id === workId);
+            if (!work) return;
+
+            work.liked = !work.liked;
+            work.likes = work.liked ? work.likes + 1 : work.likes - 1;
+
+            // UI 업데이트
+            const icon = btn.querySelector('i');
+            const count = btn.querySelector('span');
+
+            if (work.liked) {
+                btn.classList.add('liked');
+                icon.className = 'fa-solid fa-heart';
+            } else {
+                btn.classList.remove('liked');
+                icon.className = 'fa-regular fa-heart';
+            }
+
+            count.textContent = work.likes;
         }
 
         // === 관심친구 탭 렌더링 ===
