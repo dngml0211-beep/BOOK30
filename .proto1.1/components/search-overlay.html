@@ -1,0 +1,546 @@
+<!-- 북클럽 3.0 - 통합검색 오버레이 -->
+<div id="search-overlay" class="search-overlay hidden">
+    <!-- 검색 헤더 -->
+    <div class="search-header">
+        <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input
+                type="text"
+                id="search-input"
+                class="search-input"
+                placeholder="책 제목, 초성 검색 (예: ㅅㅂㅇㅍㅌ)"
+                autocomplete="off"
+            />
+            <button id="search-clear-btn" class="search-clear-btn hidden">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <button id="search-close-btn" class="search-close-btn">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- 자동완성 -->
+    <div id="autocomplete-dropdown" class="autocomplete-dropdown hidden"></div>
+
+    <!-- 검색 필터 -->
+    <div class="search-filters">
+        <div class="filter-section">
+            <label class="filter-label">장르</label>
+            <div class="filter-chips" id="genre-filters">
+                <button class="filter-chip active" data-genre="all">전체</button>
+                <button class="filter-chip" data-genre="동화">동화</button>
+                <button class="filter-chip" data-genre="만화">만화</button>
+                <button class="filter-chip" data-genre="과학">과학</button>
+                <button class="filter-chip" data-genre="판타지">판타지</button>
+                <button class="filter-chip" data-genre="모험">모험</button>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <label class="filter-label">
+                <input type="checkbox" id="krs-filter-toggle" checked />
+                <span>내 레벨에 맞는 책만 보기 (KRS ±1)</span>
+            </label>
+        </div>
+
+        <div class="filter-section">
+            <label class="filter-label">정렬</label>
+            <select id="sort-select" class="sort-select">
+                <option value="relevance">관련도순</option>
+                <option value="popular">인기순</option>
+                <option value="latest">최신순</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 검색 결과 -->
+    <div class="search-results-container" id="search-results-container">
+        <!-- 로딩 -->
+        <div id="search-loading" class="search-loading hidden">
+            <div class="spinner"></div>
+            <p>검색 중...</p>
+        </div>
+
+        <!-- 검색 히스토리 -->
+        <div id="search-history" class="search-history hidden">
+            <div class="search-history-header">
+                <h3>최근 검색</h3>
+                <button id="clear-history-btn" class="clear-history-btn">전체 삭제</button>
+            </div>
+            <div id="history-items" class="history-items"></div>
+        </div>
+
+        <!-- 검색 결과 리스트 -->
+        <div id="search-results-wrapper">
+            <!-- KRS 도서관 섹션 -->
+            <div id="krs-results-section" class="results-section hidden">
+                <div class="section-header">
+                    <h3 class="section-title">📖 KRS 도서관</h3>
+                    <span id="krs-count" class="section-count">0개</span>
+                </div>
+                <div id="krs-results" class="search-results"></div>
+            </div>
+
+            <!-- 라이브러리 섹션 -->
+            <div id="library-results-section" class="results-section hidden">
+                <div class="section-header">
+                    <h3 class="section-title">📚 라이브러리</h3>
+                    <span id="library-count" class="section-count">0개</span>
+                </div>
+                <div id="library-results" class="search-results"></div>
+            </div>
+        </div>
+
+        <!-- 검색 결과 없음 -->
+        <div id="no-results" class="no-results hidden">
+            <div class="no-results-icon">🔍</div>
+            <h3>검색 결과가 없습니다</h3>
+            <p>다른 검색어로 다시 시도해보세요</p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 검색 오버레이 */
+.search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #F8FAFC;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.search-overlay.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 검색 헤더 */
+.search-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: white;
+    border-bottom: 1px solid #E5E7EB;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    color: #9CA3AF;
+    font-size: 18px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 48px 12px 48px;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #FF9F43;
+    box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.1);
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #E5E7EB;
+    border-radius: 50%;
+    color: #6B7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.search-clear-btn:hover {
+    background: #D1D5DB;
+}
+
+.search-clear-btn.hidden {
+    display: none;
+}
+
+.search-close-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: #F3F4F6;
+    border-radius: 10px;
+    color: #6B7280;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-close-btn:hover {
+    background: #E5E7EB;
+}
+
+/* 자동완성 */
+.autocomplete-dropdown {
+    position: absolute;
+    top: 68px;
+    left: 20px;
+    right: 72px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.autocomplete-dropdown.hidden {
+    display: none;
+}
+
+.autocomplete-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+    background: #FFF4E6;
+}
+
+.autocomplete-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1F2937;
+    margin-bottom: 2px;
+}
+
+.autocomplete-meta {
+    font-size: 12px;
+    color: #9CA3AF;
+}
+
+/* 검색 필터 */
+.search-filters {
+    padding: 16px 20px;
+    background: white;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.filter-section {
+    margin-bottom: 12px;
+}
+
+.filter-section:last-child {
+    margin-bottom: 0;
+}
+
+.filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6B7280;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.filter-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    padding: 6px 14px;
+    border: 2px solid #E5E7EB;
+    border-radius: 20px;
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-chip:hover {
+    transform: scale(1.05);
+    border-color: #D1D5DB;
+}
+
+.filter-chip.active {
+    background: #FF9F43;
+    border-color: #FF9F43;
+    color: white;
+}
+
+.sort-select {
+    padding: 8px 12px;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+}
+
+/* 검색 결과 컨테이너 */
+.search-results-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* 로딩 */
+.search-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.search-loading.hidden {
+    display: none;
+}
+
+.spinner {
+    border: 3px solid #F1F5F9;
+    border-top-color: #FF9F43;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 검색 히스토리 */
+.search-history {
+    margin-bottom: 24px;
+}
+
+.search-history.hidden {
+    display: none;
+}
+
+.search-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.search-history-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1F2937;
+}
+
+.clear-history-btn {
+    border: none;
+    background: none;
+    color: #9CA3AF;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.history-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.history-item {
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #6B7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.history-item:hover {
+    border-color: #FF9F43;
+    color: #FF9F43;
+}
+
+/* 검색 결과 래퍼 */
+#search-results-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* 결과 섹션 */
+.results-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.results-section.hidden {
+    display: none;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #E5E7EB;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1F2937;
+}
+
+.section-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6B7280;
+    background: #F3F4F6;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+/* 검색 결과 */
+.search-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+}
+
+.search-result-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #FF9F43;
+}
+
+.result-cover {
+    font-size: 48px;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.result-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.result-author {
+    font-size: 12px;
+    color: #9CA3AF;
+    margin-bottom: 8px;
+}
+
+.result-krs {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.krs-1 { background: #FEE2E2; color: #991B1B; }
+.krs-2 { background: #FED7AA; color: #9A3412; }
+.krs-3 { background: #FEF3C7; color: #92400E; }
+.krs-4 { background: #D1FAE5; color: #065F46; }
+.krs-5 { background: #DBEAFE; color: #1E40AF; }
+
+/* 검색 결과 없음 */
+.no-results {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.no-results.hidden {
+    display: none;
+}
+
+.no-results-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.no-results h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1F2937;
+    margin-bottom: 8px;
+}
+
+.no-results p {
+    font-size: 14px;
+    color: #9CA3AF;
+}
+
+/* 초성 하이라이트 */
+.chosung-highlight {
+    background: linear-gradient(120deg, #FEF3C7 0%, #FDE68A 100%);
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .search-results {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+}
+</style>

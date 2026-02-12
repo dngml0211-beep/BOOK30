@@ -1177,6 +1177,602 @@
         renderBooks();
         updateTotalCount();
     });
+
+/* ============================================
+   통합 검색 모듈
+   ============================================ */
+
+/**
+ * 초성 추출 함수
+ */
+function extractChosung(str) {
+    const cho = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    return str.split('').map(char => {
+        const code = char.charCodeAt(0) - 0xAC00;
+        if (code > -1 && code < 11172) return cho[Math.floor(code / 588)];
+        return char;
+    }).join('');
+}
+
+/**
+ * Edit Distance 계산
+ */
+function editDistance(a, b) {
+    const matrix = [];
+    for(let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+    for(let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+    for(let i = 1; i <= b.length; i++) {
+        for(let j = 1; j <= a.length; j++) {
+            if(b.charAt(i-1) === a.charAt(j-1)) {
+                matrix[i][j] = matrix[i-1][j-1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i-1][j-1] + 1,
+                    matrix[i][j-1] + 1,
+                    matrix[i-1][j] + 1
+                );
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+/**
+ * 검색 매칭 함수
+ */
+function matchSearch(book, query) {
+    if (!query) return {match: true, score: 100, type: 'all'};
+
+    const q = query.toLowerCase();
+    const title = book.title.toLowerCase();
+    const author = book.author?.toLowerCase() || '';
+    const chosung = extractChosung(book.title);
+
+    if (title.includes(q)) return {match: true, score: 100, type: 'exact'};
+    if (chosung.includes(q)) return {match: true, score: 80, type: 'chosung'};
+    if (author.includes(q)) return {match: true, score: 60, type: 'author'};
+
+    if (q.length >= 2) {
+        for(let i = 0; i < title.length - 1; i++) {
+            if (title.slice(i, i+q.length) === q) {
+                return {match: true, score: 70, type: 'partial'};
+            }
+        }
+    }
+
+    if (q.length >= 3 && editDistance(title, q) <= 2) {
+        return {match: true, score: 50, type: 'fuzzy'};
+    }
+
+    return {match: false, score: 0, type: null};
+}
+
+/**
+ * 도서 검색 및 필터링
+ */
+function searchBooks(books, options = {}) {
+    const {
+        query = '',
+        userKrs = 3,
+        krsFilterOn = true,
+        sortBy = 'relevance',
+        genreFilter = 'all',
+        ageFilter = null
+    } = options;
+
+    if (!query && genreFilter === 'all' && !ageFilter) {
+        return [];
+    }
+
+    let results = books.map(book => ({
+        ...book,
+        matchInfo: matchSearch(book, query)
+    })).filter(book => book.matchInfo.match);
+
+    if (genreFilter !== 'all') {
+        results = results.filter(book => book.genre === genreFilter);
+    }
+
+    if (ageFilter) {
+        results = results.filter(book =>
+            book.ageMin <= ageFilter && book.ageMax >= ageFilter
+        );
+    }
+
+    if (krsFilterOn && userKrs) {
+        results = results.filter(book =>
+            book.krsLevel >= userKrs - 1 && book.krsLevel <= userKrs + 1
+        );
+    }
+
+    results = results.map(book => {
+        let finalScore = book.matchInfo.score;
+
+        if (book.krsLevel === userKrs) {
+            finalScore *= 2.0;
+        } else if (Math.abs(book.krsLevel - userKrs) === 1) {
+            finalScore *= 1.5;
+        }
+
+        finalScore += (book.popularity || 0) * 0.1;
+
+        return {...book, finalScore};
+    });
+
+    if (sortBy === 'relevance') {
+        results.sort((a, b) => b.finalScore - a.finalScore);
+    } else if (sortBy === 'latest') {
+        results.sort((a, b) => (b.id || 0) - (a.id || 0));
+    } else if (sortBy === 'popular') {
+        results.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    }
+
+    return results;
+}
+
+/**
+ * 자동완성 제안 생성
+ */
+function getAutocompleteSuggestions(books, query) {
+    if (!query || query.length < 1) return [];
+
+    const suggestions = books
+        .map(book => {
+            const match = matchSearch(book, query);
+            return match.match ? {...book, matchInfo: match} : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.matchInfo.score - a.matchInfo.score)
+        .slice(0, 5);
+
+    return suggestions;
+}
+
+/**
+ * 검색 히스토리 관리
+ */
+const SearchHistory = {
+    KEY: 'bc3_search_history',
+    MAX_ITEMS: 10,
+
+    get() {
+        try {
+            const history = localStorage.getItem(this.KEY);
+            return history ? JSON.parse(history) : [];
+        } catch (e) {
+            console.error('Failed to load search history:', e);
+            return [];
+        }
+    },
+
+    add(query) {
+        if (!query || !query.trim()) return;
+
+        try {
+            let history = this.get();
+            history = history.filter(item => item !== query);
+            history.unshift(query);
+            history = history.slice(0, this.MAX_ITEMS);
+
+            localStorage.setItem(this.KEY, JSON.stringify(history));
+        } catch (e) {
+            console.error('Failed to save search history:', e);
+        }
+    },
+
+    clear() {
+        try {
+            localStorage.removeItem(this.KEY);
+        } catch (e) {
+            console.error('Failed to clear search history:', e);
+        }
+    }
+};
+
+/**
+ * 초성 하이라이트 HTML 생성
+ */
+function highlightMatch(text, query) {
+    if (!query) return text;
+
+    const chosung = extractChosung(text);
+    const qLower = query.toLowerCase();
+
+    if (chosung.includes(qLower)) {
+        let highlighted = '';
+        let chosungIndex = 0;
+        let matchStart = chosung.indexOf(qLower);
+        let matchEnd = matchStart + qLower.length;
+
+        for (let i = 0; i < text.length; i++) {
+            if (chosungIndex >= matchStart && chosungIndex < matchEnd) {
+                highlighted += `<span class="chosung-highlight">${text[i]}</span>`;
+            } else {
+                highlighted += text[i];
+            }
+            const code = text.charCodeAt(i) - 0xAC00;
+            if (code > -1 && code < 11172) {
+                chosungIndex++;
+            }
+        }
+        return highlighted;
+    }
+
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<span class="chosung-highlight">$1</span>');
+}
+
+/* ============================================
+   검색 오버레이 컨트롤러
+   ============================================ */
+
+let searchState = {
+    query: '',
+    genreFilter: 'all',
+    krsFilterOn: true,
+    sortBy: 'relevance',
+    userKrs: 3,
+    books: [],
+    autocompleteIndex: -1
+};
+
+/**
+ * 샘플 도서 데이터 로드
+ */
+function loadSampleBooks() {
+    searchState.books = [
+        // KRS 도서관
+        {id:1, title:'신비아파트', author:'서울문화사', publisher:'서울문화사', genre:'만화', krsLevel:3, ageMin:7, ageMax:10, series:'신비아파트', cover:'📚', rating:4.8, reviews:1234, popularity:95, category:'krs'},
+        {id:2, title:'신비한 마법의 성', author:'김마법', publisher:'마법출판사', genre:'판타지', krsLevel:3, ageMin:8, ageMax:11, series:null, cover:'🏰', rating:4.5, reviews:567, popularity:78, category:'krs'},
+        {id:3, title:'또봇', author:'레트로봇', publisher:'영실업', genre:'만화', krsLevel:3, ageMin:5, ageMax:8, series:'또봇', cover:'🤖', rating:4.7, reviews:890, popularity:88, category:'krs'},
+        {id:4, title:'타요 버스', author:'아이코닉스', publisher:'키즈랜드', genre:'동화', krsLevel:2, ageMin:3, ageMax:6, series:'타요', cover:'🚌', rating:4.9, reviews:2345, popularity:92, category:'krs'},
+        {id:5, title:'공룡 대탐험', author:'김공룡', publisher:'과학나라', genre:'과학', krsLevel:4, ageMin:9, ageMax:12, series:null, cover:'🦕', rating:4.6, reviews:456, popularity:72, category:'krs'},
+        // 라이브러리
+        {id:6, title:'심쿵 바다 여행', author:'이바다', publisher:'바다출판', genre:'동화', krsLevel:2, ageMin:4, ageMax:7, series:null, cover:'🐠', rating:4.4, reviews:321, popularity:65, category:'library'},
+        {id:7, title:'모험왕 탐험대', author:'박모험', publisher:'탐험출판', genre:'모험', krsLevel:3, ageMin:8, ageMax:11, series:'모험왕', cover:'🗺️', rating:4.7, reviews:678, popularity:81, category:'library'},
+        {id:8, title:'숲속 친구들', author:'최나무', publisher:'숲출판사', genre:'동화', krsLevel:2, ageMin:4, ageMax:7, series:null, cover:'🌲', rating:4.8, reviews:543, popularity:76, category:'library'},
+        {id:9, title:'우주 탐험', author:'강우주', publisher:'우주과학', genre:'과학', krsLevel:5, ageMin:10, ageMax:13, series:'우주탐험', cover:'🚀', rating:4.5, reviews:234, popularity:68, category:'library'},
+        {id:10, title:'마법 학교', author:'정마법', publisher:'마법출판', genre:'판타지', krsLevel:4, ageMin:9, ageMax:12, series:'마법학교', cover:'🧙', rating:4.9, reviews:1567, popularity:89, category:'library'},
+    ];
+}
+
+/**
+ * 검색 오버레이 초기화
+ */
+function initializeSearchOverlay() {
+    const searchInput = document.getElementById('search-input');
+    const searchClearBtn = document.getElementById('search-clear-btn');
+    const searchCloseBtn = document.getElementById('search-close-btn');
+    const krsFilterToggle = document.getElementById('krs-filter-toggle');
+    const sortSelect = document.getElementById('sort-select');
+    const genreFilters = document.querySelectorAll('#genre-filters .filter-chip');
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+    const userInfo = AppState?.getUserInfo();
+    if (userInfo && userInfo.level) {
+        const krsMatch = userInfo.level.match(/K(\d+)/);
+        if (krsMatch) {
+            searchState.userKrs = parseInt(krsMatch[1]);
+        }
+    }
+
+    loadSampleBooks();
+
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('keydown', handleKeyDown);
+    searchClearBtn.addEventListener('click', clearSearch);
+    searchCloseBtn.addEventListener('click', closeSearchOverlay);
+    krsFilterToggle.addEventListener('change', handleKrsFilterToggle);
+    sortSelect.addEventListener('change', handleSortChange);
+
+    genreFilters.forEach(btn => {
+        btn.addEventListener('click', () => handleGenreFilter(btn));
+    });
+
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', clearSearchHistory);
+    }
+
+    showSearchHistory();
+
+    console.log('✅ 검색 오버레이 초기화 완료');
+}
+
+function handleSearchInput(e) {
+    searchState.query = e.target.value;
+    const searchClearBtn = document.getElementById('search-clear-btn');
+
+    if (searchState.query) {
+        searchClearBtn.classList.remove('hidden');
+        showAutocomplete();
+    } else {
+        searchClearBtn.classList.add('hidden');
+        hideAutocomplete();
+        showSearchHistory();
+    }
+
+    performSearch();
+}
+
+function handleKeyDown(e) {
+    const autocomplete = document.getElementById('autocomplete-dropdown');
+    const items = autocomplete.querySelectorAll('.autocomplete-item');
+
+    if (e.key === 'Escape') {
+        closeSearchOverlay();
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        searchState.autocompleteIndex = Math.min(searchState.autocompleteIndex + 1, items.length - 1);
+        updateAutocompleteHighlight();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        searchState.autocompleteIndex = Math.max(searchState.autocompleteIndex - 1, -1);
+        updateAutocompleteHighlight();
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (searchState.autocompleteIndex >= 0 && items[searchState.autocompleteIndex]) {
+            items[searchState.autocompleteIndex].click();
+        } else if (searchState.query) {
+            SearchHistory.add(searchState.query);
+            hideAutocomplete();
+            performSearch();
+        }
+    }
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('search-input');
+    searchInput.value = '';
+    searchState.query = '';
+    document.getElementById('search-clear-btn').classList.add('hidden');
+    hideAutocomplete();
+    showSearchHistory();
+    performSearch();
+}
+
+function handleGenreFilter(btn) {
+    document.querySelectorAll('#genre-filters .filter-chip').forEach(b => {
+        b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    searchState.genreFilter = btn.dataset.genre;
+    performSearch();
+}
+
+function handleKrsFilterToggle(e) {
+    searchState.krsFilterOn = e.target.checked;
+    performSearch();
+}
+
+function handleSortChange(e) {
+    searchState.sortBy = e.target.value;
+    performSearch();
+}
+
+function performSearch() {
+    const resultsContainer = document.getElementById('search-results');
+    const noResults = document.getElementById('no-results');
+    const searchHistory = document.getElementById('search-history');
+
+    if (searchState.query || searchState.genreFilter !== 'all') {
+        searchHistory.classList.add('hidden');
+    }
+
+    const results = searchBooks(searchState.books, {
+        query: searchState.query,
+        userKrs: searchState.userKrs,
+        krsFilterOn: searchState.krsFilterOn,
+        sortBy: searchState.sortBy,
+        genreFilter: searchState.genreFilter
+    });
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '';
+        noResults.classList.remove('hidden');
+    } else {
+        noResults.classList.add('hidden');
+        renderSearchResults(results);
+    }
+}
+
+function renderSearchResults(results) {
+    // 결과를 카테고리별로 분류
+    const krsBooks = results.filter(book => book.category === 'krs');
+    const libraryBooks = results.filter(book => book.category === 'library');
+
+    // KRS 섹션
+    const krsSection = document.getElementById('krs-results-section');
+    const krsContainer = document.getElementById('krs-results');
+    const krsCount = document.getElementById('krs-count');
+
+    if (krsBooks.length > 0) {
+        krsSection.classList.remove('hidden');
+        krsCount.textContent = `${krsBooks.length}개`;
+        krsContainer.innerHTML = krsBooks.map(book => `
+            <div class="search-result-card" onclick="openBook('${book.id}')">
+                <div class="result-cover">${book.cover}</div>
+                <div class="result-title">${highlightMatch(book.title, searchState.query)}</div>
+                <div class="result-author">${book.author}</div>
+                <span class="result-krs krs-${book.krsLevel}">K${book.krsLevel}</span>
+            </div>
+        `).join('');
+    } else {
+        krsSection.classList.add('hidden');
+    }
+
+    // 라이브러리 섹션
+    const librarySection = document.getElementById('library-results-section');
+    const libraryContainer = document.getElementById('library-results');
+    const libraryCount = document.getElementById('library-count');
+
+    if (libraryBooks.length > 0) {
+        librarySection.classList.remove('hidden');
+        libraryCount.textContent = `${libraryBooks.length}개`;
+        libraryContainer.innerHTML = libraryBooks.map(book => `
+            <div class="search-result-card" onclick="openBook('${book.id}')">
+                <div class="result-cover">${book.cover}</div>
+                <div class="result-title">${highlightMatch(book.title, searchState.query)}</div>
+                <div class="result-author">${book.author}</div>
+                <span class="result-krs krs-${book.krsLevel}">K${book.krsLevel}</span>
+            </div>
+        `).join('');
+    } else {
+        librarySection.classList.add('hidden');
+    }
+}
+
+function showAutocomplete() {
+    const suggestions = getAutocompleteSuggestions(searchState.books, searchState.query);
+    const dropdown = document.getElementById('autocomplete-dropdown');
+
+    if (suggestions.length === 0) {
+        hideAutocomplete();
+        return;
+    }
+
+    dropdown.innerHTML = suggestions.map((book, index) => `
+        <div class="autocomplete-item ${index === searchState.autocompleteIndex ? 'active' : ''}"
+             data-index="${index}"
+             onclick="selectAutocomplete('${book.title}')">
+            <div class="autocomplete-title">${highlightMatch(book.title, searchState.query)}</div>
+            <div class="autocomplete-meta">${book.author} · K${book.krsLevel}</div>
+        </div>
+    `).join('');
+
+    dropdown.classList.remove('hidden');
+}
+
+function hideAutocomplete() {
+    const dropdown = document.getElementById('autocomplete-dropdown');
+    dropdown.classList.add('hidden');
+    searchState.autocompleteIndex = -1;
+}
+
+function updateAutocompleteHighlight() {
+    const items = document.querySelectorAll('.autocomplete-item');
+    items.forEach((item, index) => {
+        if (index === searchState.autocompleteIndex) {
+            item.classList.add('active');
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+function selectAutocomplete(title) {
+    const searchInput = document.getElementById('search-input');
+    searchInput.value = title;
+    searchState.query = title;
+    SearchHistory.add(title);
+    hideAutocomplete();
+    performSearch();
+}
+
+function showSearchHistory() {
+    const historyContainer = document.getElementById('search-history');
+    const historyItems = document.getElementById('history-items');
+    const history = SearchHistory.get();
+
+    if (history.length === 0) {
+        historyContainer.classList.add('hidden');
+        return;
+    }
+
+    historyItems.innerHTML = history.map(query => `
+        <button class="history-item" onclick="selectHistoryItem('${query}')">${query}</button>
+    `).join('');
+
+    historyContainer.classList.remove('hidden');
+}
+
+function selectHistoryItem(query) {
+    const searchInput = document.getElementById('search-input');
+    searchInput.value = query;
+    searchState.query = query;
+    document.getElementById('search-clear-btn').classList.remove('hidden');
+    hideAutocomplete();
+    performSearch();
+}
+
+function clearSearchHistory() {
+    SearchHistory.clear();
+    document.getElementById('search-history').classList.add('hidden');
+}
+
+function openBook(bookId) {
+    console.log('도서 열기:', bookId);
+    // 도서 상세 페이지 이동 로직 추가
+}
+
+/**
+ * 검색 오버레이 로드
+ */
+async function loadSearchOverlay() {
+    if (document.getElementById('search-overlay')) return;
+
+    try {
+        const response = await fetch('../components/search-overlay.html');
+        if (!response.ok) throw new Error('Failed to load search overlay');
+
+        const html = await response.text();
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        console.log('✅ 검색 오버레이 로드 완료');
+        initializeSearchOverlay();
+    } catch (error) {
+        console.error('Error loading search overlay:', error);
+    }
+}
+
+/**
+ * 검색 오버레이 열기
+ */
+function openSearchOverlay() {
+    if (!document.getElementById('search-overlay')) {
+        loadSearchOverlay().then(() => {
+            showSearchOverlay();
+        });
+    } else {
+        showSearchOverlay();
+    }
+}
+
+/**
+ * 검색 오버레이 표시
+ */
+function showSearchOverlay() {
+    const overlay = document.getElementById('search-overlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        const input = document.getElementById('search-input');
+        if (input) {
+            setTimeout(() => input.focus(), 100);
+        }
+    }
+}
+
+/**
+ * 검색 오버레이 닫기
+ */
+function closeSearchOverlay() {
+    const overlay = document.getElementById('search-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
+// 전역으로 내보내기
+window.openSearchOverlay = openSearchOverlay;
+window.closeSearchOverlay = closeSearchOverlay;
+window.selectAutocomplete = selectAutocomplete;
+window.selectHistoryItem = selectHistoryItem;
+window.openBook = openBook;
+
     </script>
 
 <!-- Proto Navigation (怨듯넻 Dev Tool) -->

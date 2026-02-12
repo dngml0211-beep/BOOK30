@@ -563,6 +563,65 @@ function renderFloatingBuddy(currentPage) {
     document.body.appendChild(btn);
 }
 
+/**
+ * 검색 오버레이 로드
+ */
+async function loadSearchOverlay() {
+    // 이미 로드된 경우 스킵
+    if (document.getElementById('search-overlay')) return;
+
+    try {
+        const response = await fetch('../components/search-overlay.html');
+        if (!response.ok) throw new Error('Failed to load search overlay');
+
+        const html = await response.text();
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        console.log('✅ 검색 오버레이 로드 완료');
+        initializeSearchOverlay();
+    } catch (error) {
+        console.error('Error loading search overlay:', error);
+    }
+}
+
+/**
+ * 검색 오버레이 열기
+ */
+function openSearchOverlay() {
+    // 오버레이가 아직 로드되지 않았으면 로드
+    if (!document.getElementById('search-overlay')) {
+        loadSearchOverlay().then(() => {
+            showSearchOverlay();
+        });
+    } else {
+        showSearchOverlay();
+    }
+}
+
+/**
+ * 검색 오버레이 표시
+ */
+function showSearchOverlay() {
+    const overlay = document.getElementById('search-overlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        const input = document.getElementById('search-input');
+        if (input) {
+            setTimeout(() => input.focus(), 100);
+        }
+    }
+}
+
+/**
+ * 검색 오버레이 닫기
+ */
+function closeSearchOverlay() {
+    const overlay = document.getElementById('search-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
 // 전역으로 내보내기
 window.loadSidebar = loadSidebar;
 window.loadLogoutModal = loadLogoutModal;
@@ -575,3 +634,6 @@ window.applyAppNavVisibility = applyAppNavVisibility;
 window.restoreAppCheckIcons = restoreAppCheckIcons;
 window.renderBottomNav = renderBottomNav;
 window.renderFloatingBuddy = renderFloatingBuddy;
+window.loadSearchOverlay = loadSearchOverlay;
+window.openSearchOverlay = openSearchOverlay;
+window.closeSearchOverlay = closeSearchOverlay;
