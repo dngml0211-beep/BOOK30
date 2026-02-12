@@ -1437,8 +1437,10 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   const [recordPopup, setRecordPopup] = useState(null); // {x, y, text}
   const [isRecording, setIsRecording] = useState(false);
   const [audioURL, setAudioURL] = useState(null);
+  const [recordingTime, setRecordingTime] = useState(0); // 녹음 시간 (초)
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(null);
   const [dragEnd, setDragEnd] = useState(null);
@@ -1777,6 +1779,26 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     });
   }, []);
 
+  // ── 녹음 타이머 ──
+  useEffect(() => {
+    if (isRecording) {
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    };
+  }, [isRecording]);
+
   // ── 녹음 기능 ──
   const startRecording = useCallback(async () => {
     try {
@@ -1815,6 +1837,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
     setRecordPopup(null);
     setAudioURL(null);
     setIsRecording(false);
+    setRecordingTime(0);
   }, []);
 
   // Keyboard nav
@@ -1961,10 +1984,16 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
             )}
 
             {isRecording && (
-              <button onClick={stopRecording} className="w-full py-2.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl font-bold hover:from-gray-600 hover:to-gray-700 transition flex items-center justify-center gap-2">
-                <span className="text-lg animate-pulse">⏹️</span>
-                녹음 중지
-              </button>
+              <div className="space-y-3">
+                <div className="flex items-center justify-center gap-2 py-2">
+                  <span className="text-2xl animate-pulse">🔴</span>
+                  <span className="text-2xl font-mono font-bold text-red-600">{String(Math.floor(recordingTime / 60)).padStart(2, '0')}:{String(recordingTime % 60).padStart(2, '0')}</span>
+                </div>
+                <button onClick={stopRecording} className="w-full py-2.5 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-xl font-bold hover:from-gray-800 hover:to-gray-900 transition flex items-center justify-center gap-2">
+                  <span className="text-lg">⏹️</span>
+                  녹음 완료
+                </button>
+              </div>
             )}
 
             {audioURL && (

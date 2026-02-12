@@ -12,7 +12,11 @@
       "Bash(git remote set-url:*)",
       "Bash(gh:*)",
       "Bash(git config:*)",
-      "Bash(GIT_TERMINAL_PROMPT=0 git push:*)"
+      "Bash(GIT_TERMINAL_PROMPT=0 git push:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(ls:*)"
     ]
   }
 }
