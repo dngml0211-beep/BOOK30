@@ -357,6 +357,26 @@
 
             enableClickToggle();
         });
+
+        /**
+         * 뒤로가기 함수
+         */
+        function goBack() {
+            // sessionStorage에서 referrer 확인
+            const referrer = sessionStorage.getItem('referrer');
+
+            if (referrer) {
+                // referrer가 있으면 그곳으로 이동
+                console.log('🔙 뒤로가기:', referrer);
+                sessionStorage.removeItem('referrer');
+                sessionStorage.removeItem('currentBook');
+                window.location.href = referrer;
+            } else {
+                // referrer가 없으면 브라우저 뒤로가기
+                console.log('🔙 브라우저 뒤로가기');
+                window.history.back();
+            }
+        }
     </script>
 </body>
 </html>

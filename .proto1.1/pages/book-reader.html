@@ -1499,7 +1499,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
         break;
       case 'write':
         // 감상문 작성 전용 페이지로 이동
-        sessionStorage.setItem('referrer', window.location.href);
+        // referrer는 유지 (덮어쓰지 않음)
         const targetWindow = window.parent !== window ? window.parent : window;
         targetWindow.location.href = 'review-writer.html';
         break;
@@ -1681,7 +1681,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
 
   const handleStartWrite = useCallback(() => {
     // 감상문 작성 전용 페이지로 이동 (통일된 경험 제공)
-    sessionStorage.setItem('referrer', window.location.href);
+    // referrer는 유지 (덮어쓰지 않음)
     const targetWindow = window.parent !== window ? window.parent : window;
     targetWindow.location.href = 'review-writer.html';
   }, []);
@@ -2924,19 +2924,28 @@ async function saveReviewToFirebase(report) {
 }
 
 /**
- * 감상문 추가/수정 (localStorage + Firebase)
+ * 감상문 추가/수정 (Firebase 우선, localStorage는 폴백)
  */
 function upsertReport(report) {
-  // localStorage 저장
-  const arr = loadReports();
-  const idx = arr.findIndex(r => r.id === report.id);
-  if (idx >= 0) arr[idx] = report; else arr.unshift(report);
-  persistReports(arr);
-
-  // Firebase 저장 (비동기)
+  // Firebase 저장 (우선)
   saveReviewToFirebase(report).catch(err => {
     console.error('Firebase 저장 중 오류:', err);
   });
+
+  // localStorage 저장 (용량 체크 후 저장)
+  try {
+    const arr = loadReports();
+    const idx = arr.findIndex(r => r.id === report.id);
+    if (idx >= 0) arr[idx] = report; else arr.unshift(report);
+    persistReports(arr);
+  } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      console.warn('⚠️ localStorage 용량 초과, Firebase만 사용합니다.');
+      // localStorage 용량 초과 시 Firebase만 사용
+    } else {
+      console.error('localStorage 저장 실패:', error);
+    }
+  }
 }
 
 /**
@@ -2958,16 +2967,20 @@ async function deleteReviewFromFirebase(reviewId) {
 }
 
 /**
- * 감상문 삭제 (localStorage + Firebase)
+ * 감상문 삭제 (Firebase 우선, localStorage는 폴백)
  */
 function removeReport(id) {
-  // localStorage에서 삭제
-  persistReports(loadReports().filter(r => r.id !== id));
-
-  // Firebase에서 삭제 (비동기)
+  // Firebase에서 삭제 (우선)
   deleteReviewFromFirebase(id).catch(err => {
     console.error('Firebase 삭제 중 오류:', err);
   });
+
+  // localStorage에서 삭제 (용량 체크 후 삭제)
+  try {
+    persistReports(loadReports().filter(r => r.id !== id));
+  } catch (error) {
+    console.warn('localStorage 삭제 실패:', error);
+  }
 }
 
 function newId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
@@ -3554,15 +3567,26 @@ function ReportWriter({ bookName, pageImageSrc, onExit, existingReport }) {
 
   /* ── 저장 ── */
   const handleSave = () => {
-    upsertReport({
-      id: reportId, bookName, reviewType, bodyText, drawingData, stickers,
-      thumbnail: drawingData || null,
-      title: typeInfo ? typeInfo.label + ' 감상문' : '감상문',
-      createdAt: existingReport?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      upsertReport({
+        id: reportId, bookName, reviewType, bodyText, drawingData, stickers,
+        thumbnail: drawingData || null,
+        title: typeInfo ? typeInfo.label + ' 감상문' : '감상문',
+        createdAt: existingReport?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      console.log('✅ 감상문 저장 시작');
+    } catch (error) {
+      console.error('❌ 감상문 저장 오류:', error);
+      // 오류가 나도 계속 진행
+    }
+
+    // 오류 여부와 관계없이 1.5초 후 무조건 닫기
     setSaved(true);
-    setTimeout(() => { setSaved(false); onExit(); }, 1500);
+    setTimeout(() => {
+      setSaved(false);
+      onExit();
+    }, 1500);
   };
 
   return (

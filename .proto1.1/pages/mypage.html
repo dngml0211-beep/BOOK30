@@ -6343,9 +6343,22 @@
         }
 
         function openBookFromShelf(bookId, genre) {
-            // book-viewer로 이동하거나 책 상세 페이지로 이동
-            console.log('책 열기:', bookId, genre);
-            // 필요시 window.location.href = 'book-viewer.html?id=' + bookId;
+            // 책 정보를 찾기
+            const allBooks = [...readingBooks, ...completedBooks, ...offlineBooks];
+            const book = allBooks.find(b => b.id === bookId);
+
+            if (book) {
+                // book-library.html과 동일한 방식으로 book-viewer-clean.html로 이동
+                const bookData = {
+                    id: book.id,
+                    title: book.title,
+                    genre: book.genre || genre || '기타',
+                    category: 'mypage'
+                };
+                sessionStorage.setItem('currentBook', JSON.stringify(bookData));
+                sessionStorage.setItem('referrer', 'mypage.html');
+                window.location.href = 'book-viewer-clean.html';
+            }
         }
 
         function writeReportFromShelf(event, bookId, bookTitle, genre) {
