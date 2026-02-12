@@ -1966,10 +1966,10 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
           <div className={`buddy-enter cursor-pointer rounded-full transition-all duration-500 ${buddyState === 'sleepy' ? 'opacity-60' : ''} ${buddyState === 'stretch' ? 'animate-bounce' : ''}`}
             style={{
               filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))',
-              transform: buddyMenuOpen ? 'scale(1.1)' : 'scale(1)',
+              transform: buddyMenuOpen || bubbleMsg ? 'scale(1)' : 'scale(0.55)',
             }}
             onClick={() => { if (bubbleMsg) { closeBuddyBubble(); } else { setBuddyMenuOpen(v => !v); } }}>
-            <SquirrelBuddy emotion={buddyState === 'happy' ? 'excited' : buddyState === 'sleepy' ? 'sleepy' : buddyState === 'stretch' ? 'excited' : 'kind'} size={110}/>
+            <SquirrelBuddy emotion={buddyState === 'happy' ? 'excited' : buddyState === 'sleepy' ? 'sleepy' : buddyState === 'stretch' ? 'excited' : 'kind'} size={150}/>
           </div>
         </div>
       )}
