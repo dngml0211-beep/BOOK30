@@ -372,8 +372,8 @@ function renderReviews() {
         return `
             <div class="rec-card-netflix" onclick="viewReview('${review.id}')">
                 <div class="rec-cover">
-                    ${review.drawing
-                        ? `<img src="${review.drawing}" alt="${review.bookTitle}">`
+                    ${review.drawingData
+                        ? `<img src="${review.drawingData}" alt="${review.bookTitle}">`
                         : `<div style="width:100%;height:100%;background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);display:flex;align-items:center;justify-content:center;"><span style="font-size:80px;">${typeInfo.icon}</span></div>`
                     }
                     <div class="rec-gradient"></div>

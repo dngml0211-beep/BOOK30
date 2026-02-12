@@ -556,7 +556,7 @@ function PreviewCard({review, typeInfo}) {
    메인 앱
    ══════════════════════════════════════ */
 function ReviewApp() {
-  const [mode, setMode] = useState('write'); // write | list
+  const [mode, setMode] = useState('write'); // write | list | view
   const [step, setStep] = useState(1); // 1:책선택, 2:유형선택, 3:작성, 4:미리보기
   const [selectedBook, setSelectedBook] = useState(null);
   const [reviewType, setReviewType] = useState(null);
@@ -567,10 +567,25 @@ function ReviewApp() {
   const [showDrawing, setShowDrawing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [previewReview, setPreviewReview] = useState(null);
+  const [viewingReview, setViewingReview] = useState(null);
+  const [editingReviewId, setEditingReviewId] = useState(null);
 
   // 외부에서 책 정보 받아오기 (독서뷰어나 도서 리스트에서 진입)
   useEffect(() => {
     try {
+      // 1. 갤러리에서 특정 감상문 보기로 진입한 경우
+      const reviewId = sessionStorage.getItem('reviewId');
+      if (reviewId) {
+        const review = reviews.find(r => r.id === reviewId);
+        if (review) {
+          setViewingReview(review);
+          setMode('view');
+          sessionStorage.removeItem('reviewId'); // 사용 후 제거
+          return;
+        }
+      }
+
+      // 2. 독서뷰어나 도서 리스트에서 새 감상문 작성으로 진입한 경우
       const currentBook = JSON.parse(sessionStorage.getItem('currentBook') || '{}');
       if (currentBook.title) {
         // 책 정보가 있으면 자동으로 선택하고 step 2로 이동
@@ -597,10 +612,10 @@ function ReviewApp() {
     setStickers([]);
   };
 
-  // 저장
+  // 저장 (신규 또는 수정)
   const saveReview = () => {
-    const newReview = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+    const reviewData = {
+      id: editingReviewId || (Date.now().toString() + Math.random().toString(36).substr(2, 5)),
       bookId: selectedBook.id,
       bookTitle: selectedBook.title,
       bookEmoji: selectedBook.emoji,
@@ -609,9 +624,20 @@ function ReviewApp() {
       content: reviewText,
       drawingData,
       stickers,
-      createdAt: new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }),
+      createdAt: editingReviewId
+        ? reviews.find(r => r.id === editingReviewId)?.createdAt
+        : new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }),
     };
-    const updated = [newReview, ...reviews];
+
+    let updated;
+    if (editingReviewId) {
+      // 수정 모드
+      updated = reviews.map(r => r.id === editingReviewId ? reviewData : r);
+    } else {
+      // 신규 작성
+      updated = [reviewData, ...reviews];
+    }
+
     setReviews(updated);
     saveReviewsToStorage(updated);
     setShowSuccess(true);
@@ -623,6 +649,7 @@ function ReviewApp() {
         window.location.href = referrer;
       } else {
         resetForm();
+        setEditingReviewId(null);
         setMode('list');
       }
     }, 2000);
@@ -633,6 +660,23 @@ function ReviewApp() {
     const updated = reviews.filter(r => r.id !== id);
     setReviews(updated);
     saveReviewsToStorage(updated);
+  };
+
+  // 감상문 수정 시작
+  const startEditReview = (review) => {
+    setEditingReviewId(review.id);
+    setSelectedBook({
+      id: review.bookId,
+      title: review.bookTitle,
+      emoji: review.bookEmoji,
+      color: review.bookColor
+    });
+    setReviewType(review.type);
+    setReviewText(review.content || '');
+    setDrawingData(review.drawingData);
+    setStickers(review.stickers || []);
+    setStep(3); // 작성 단계로 이동
+    setMode('write');
   };
 
   const typeInfo = reviewType ? REVIEW_TYPES.find(t => t.id === reviewType) : null;
@@ -655,19 +699,21 @@ function ReviewApp() {
               ← 나가기
             </button>
             <h1 className="font-black text-xl text-gray-700">
-              {mode === 'write' ? '✏️ 감상문 쓰기' : '📚 내 감상문'}
+              {mode === 'write' ? (editingReviewId ? '✏️ 감상문 수정' : '✏️ 감상문 쓰기') : mode === 'view' ? '📖 감상문 보기' : '📚 내 감상문'}
             </h1>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => { setMode('write'); if (step > 3) resetForm(); }}
-              className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${mode === 'write' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg' : 'bg-gray-100 text-gray-500'}`}>
-              ✏️ 쓰기
-            </button>
-            <button onClick={() => setMode('list')}
-              className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${mode === 'list' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg' : 'bg-gray-100 text-gray-500'}`}>
-              📚 목록 ({reviews.length})
-            </button>
-          </div>
+          {mode !== 'view' && (
+            <div className="flex gap-2">
+              <button onClick={() => { setMode('write'); if (step > 3) resetForm(); }}
+                className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${mode === 'write' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg' : 'bg-gray-100 text-gray-500'}`}>
+                ✏️ 쓰기
+              </button>
+              <button onClick={() => setMode('list')}
+                className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${mode === 'list' ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg' : 'bg-gray-100 text-gray-500'}`}>
+                📚 목록 ({reviews.length})
+              </button>
+            </div>
+          )}
         </div>
         {/* 단계 표시 (쓰기 모드) */}
         {mode === 'write' && (
@@ -912,6 +958,54 @@ function ReviewApp() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── 상세보기 모드 ── */}
+      {mode === 'view' && viewingReview && (
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col items-center gap-5">
+          <div className="w-full max-w-xl">
+            <PreviewCard
+              review={viewingReview}
+              typeInfo={REVIEW_TYPES.find(t => t.id === viewingReview.type)}
+            />
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => {
+                  const referrer = sessionStorage.getItem('referrer');
+                  if (referrer) {
+                    window.location.href = referrer;
+                  } else {
+                    setViewingReview(null);
+                    setMode('list');
+                  }
+                }}
+                className="flex-1 py-4 rounded-2xl bg-gray-100 font-bold text-gray-600 active:scale-95 transition">
+                ← 돌아가기
+              </button>
+              <button
+                onClick={() => startEditReview(viewingReview)}
+                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-blue-400 to-blue-500 text-white font-bold shadow-lg active:scale-95 transition">
+                ✏️ 수정하기
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm('정말 이 감상문을 삭제하시겠습니까?')) {
+                    deleteReview(viewingReview.id);
+                    const referrer = sessionStorage.getItem('referrer');
+                    if (referrer) {
+                      window.location.href = referrer;
+                    } else {
+                      setViewingReview(null);
+                      setMode('list');
+                    }
+                  }
+                }}
+                className="px-6 py-4 rounded-2xl bg-red-50 text-red-500 font-bold active:scale-95 transition">
+                🗑️
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
