@@ -1829,7 +1829,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
           transform: 'translate(-50%, -50%)',
           width: canvasRef.current ? canvasRef.current.style.width : '100%',
           height: canvasRef.current ? canvasRef.current.style.height : '100%',
-          pointerEvents: 'none'
+          pointerEvents: penMode ? 'auto' : 'none'
         }}>
           <div ref={highlightLayerRef} className="highlightLayer" />
           <div ref={textLayerRef}
