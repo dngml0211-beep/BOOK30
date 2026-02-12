@@ -736,6 +736,9 @@ function BuddyMiniMenu({ onAction, readPages, goalPages, totalPages, onClose }) 
       </div>
       <div className="p-2 space-y-0.5">
         {[
+          {action:'reading-guide',  icon:'👆', label:'손가락 따라 읽기', badge:'초기독서'},
+          {action:'record-mission', icon:'🎤', label:'녹음 미션', badge:'유창성'},
+          {action:'focus-mission',  icon:'⏱️', label:'집중력 미션', badge:'추론'},
           {action:'rest',  icon:'⏸️', label:'잠깐 쉴래'},
           {action:'stretch',icon:'🙆', label:'스트레칭!'},
           {action:'report',icon:'📊', label:'내 읽기 기록'},
@@ -744,7 +747,10 @@ function BuddyMiniMenu({ onAction, readPages, goalPages, totalPages, onClose }) 
           <button key={item.action} onClick={() => onAction(item.action)}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 transition text-left">
             <span className="text-lg">{item.icon}</span>
-            <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+            <div className="flex-1 flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+              {item.badge && <span className="text-[9px] px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded font-bold">{item.badge}</span>}
+            </div>
           </button>
         ))}
       </div>
@@ -1296,6 +1302,21 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   const handleBuddyAction = useCallback((action) => {
     setBuddyMenuOpen(false);
     switch(action) {
+      case 'reading-guide':
+        // 손가락 따라 읽기 (초기독서)
+        showBubbleMsg('손가락을 따라 천천히 읽어보세요! 👆📖');
+        // TODO: 텍스트 하이라이트 애니메이션 구현
+        break;
+      case 'record-mission':
+        // 녹음 미션 (독서 유창성)
+        showBubbleMsg('이 페이지를 소리 내어 읽어보세요! 🎤');
+        // TODO: 녹음 기능 구현
+        break;
+      case 'focus-mission':
+        // 집중력 미션 (독서 추론)
+        showBubbleMsg(`지금까지 ${Math.floor(buddySessionTime / 60)}분 동안 ${Math.abs(page - startPage)}페이지를 읽었어요! 🔥`);
+        setShowReport(true);
+        break;
       case 'rest':
         setBuddyState('sleepy');
         showBubbleMsg('좋아, 쉬면서 준비되면 다시 읽자! ☕');
@@ -1317,7 +1338,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
         targetWindow.location.href = 'review-writer.html';
         break;
     }
-  }, [captureCurrentPage, showBubbleMsg]);
+  }, [captureCurrentPage, showBubbleMsg, buddySessionTime, page, startPage]);
 
   // ── 테스트 패널 시뮬레이트 핸들러 ──
   const handleTestSimulate = useCallback((type, val) => {
