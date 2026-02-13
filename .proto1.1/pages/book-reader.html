@@ -446,39 +446,6 @@ async function deleteRecordingFromFirebase(recordingId) {
   }
 }
 
-// Firebase에서 녹음 로드
-async function loadRecordingsFromFirebase(bookName) {
-  try {
-    if (!window.firebaseDB) {
-      console.warn('⚠️ Firebase 미초기화');
-      return {};
-    }
-
-    console.log('📥 Firebase에서 녹음 로드 중:', bookName);
-    const { collection, query, where, getDocs } = window.firebaseModules;
-
-    const q = query(collection(window.firebaseDB, 'recordings'), where('bookName', '==', bookName));
-    const snapshot = await getDocs(q);
-
-    const recordings = {};
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const pageKey = data.pageNum;
-      if (!recordings[pageKey]) recordings[pageKey] = [];
-      recordings[pageKey].push({
-        id: doc.id,
-        ...data
-      });
-    });
-
-    console.log('✅ Firebase 녹음 로드 완료:', Object.keys(recordings).length + '페이지');
-    return recordings;
-  } catch (error) {
-    console.error('❌ Firebase 녹음 로드 실패:', error);
-    return {};
-  }
-}
-
 // Firebase에 형광펜 저장
 async function saveHighlightsToFirebase(bookName, highlights) {
   try {
