@@ -12,7 +12,7 @@
 <!-- Firebase SDK (Firestore only - 무료) -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-  import { getFirestore, collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+  import { getFirestore, collection, addDoc, setDoc, query, where, getDocs, getDoc, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
   import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
   const firebaseConfig = {
@@ -41,7 +41,7 @@
   window.firebaseAuth = auth;
   window.firebaseUser = currentUser;
   window.firebaseModules = {
-    collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc
+    collection, addDoc, setDoc, query, where, getDocs, getDoc, deleteDoc, doc
   };
   // firestoreExports는 firebaseModules의 별칭 (하위 호환성)
   window.firestoreExports = window.firebaseModules;
@@ -309,6 +309,10 @@ function loadHighlights(bookName) {
 function saveHighlights(bookName, data) {
   try {
     localStorage.setItem('bc3_highlights_' + bookName, JSON.stringify(data));
+    // Firebase에도 저장 (비동기)
+    saveHighlightsToFirebase(bookName, data).catch(err => {
+      console.error('Firebase 형광펜 저장 중 오류:', err);
+    });
   } catch(e) {}
 }
 
@@ -439,6 +443,91 @@ async function deleteRecordingFromFirebase(recordingId) {
   } catch (error) {
     console.error('❌ Firebase 삭제 실패:', error);
     return false;
+  }
+}
+
+// Firebase에서 녹음 로드
+async function loadRecordingsFromFirebase(bookName) {
+  try {
+    if (!window.firebaseDB) {
+      console.warn('⚠️ Firebase 미초기화');
+      return {};
+    }
+
+    console.log('📥 Firebase에서 녹음 로드 중:', bookName);
+    const { collection, query, where, getDocs } = window.firebaseModules;
+
+    const q = query(collection(window.firebaseDB, 'recordings'), where('bookName', '==', bookName));
+    const snapshot = await getDocs(q);
+
+    const recordings = {};
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const pageKey = data.pageNum;
+      if (!recordings[pageKey]) recordings[pageKey] = [];
+      recordings[pageKey].push({
+        id: doc.id,
+        ...data
+      });
+    });
+
+    console.log('✅ Firebase 녹음 로드 완료:', Object.keys(recordings).length + '페이지');
+    return recordings;
+  } catch (error) {
+    console.error('❌ Firebase 녹음 로드 실패:', error);
+    return {};
+  }
+}
+
+// Firebase에 형광펜 저장
+async function saveHighlightsToFirebase(bookName, highlights) {
+  try {
+    if (!window.firebaseDB) {
+      console.warn('⚠️ Firebase 미초기화');
+      return;
+    }
+
+    console.log('💾 Firebase에 형광펜 저장 중:', bookName);
+    const { doc, setDoc } = window.firebaseModules;
+
+    await setDoc(doc(window.firebaseDB, 'highlights', bookName), {
+      bookName,
+      highlights,
+      userId: window.firebaseUser?.uid || 'anonymous',
+      timestamp: Date.now()
+    });
+
+    console.log('✅ Firebase 형광펜 저장 완료');
+  } catch (error) {
+    console.error('❌ Firebase 형광펜 저장 실패:', error);
+  }
+}
+
+// Firebase에서 형광펜 로드
+async function loadHighlightsFromFirebase(bookName) {
+  try {
+    if (!window.firebaseDB) {
+      console.warn('⚠️ Firebase 미초기화');
+      return {};
+    }
+
+    console.log('📥 Firebase에서 형광펜 로드 중:', bookName);
+    const { doc, getDoc } = window.firebaseModules;
+
+    const docRef = doc(window.firebaseDB, 'highlights', bookName);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      console.log('✅ Firebase 형광펜 로드 완료');
+      return data.highlights || {};
+    } else {
+      console.log('ℹ️ Firebase에 형광펜 데이터 없음');
+      return {};
+    }
+  } catch (error) {
+    console.error('❌ Firebase 형광펜 로드 실패:', error);
+    return {};
   }
 }
 
@@ -1641,7 +1730,7 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
   useEffect(() => {
     let mounted = true;
 
-    async function fetchRecordings() {
+    async function fetchFirebaseData() {
       try {
         // Firebase 초기화 대기
         await new Promise(resolve => {
@@ -1664,17 +1753,26 @@ function PDFBookViewer({ fileData, fileName, onExit }) {
 
         if (!mounted) return;
 
+        // 녹음 로드
         const firebaseRecordings = await loadRecordingsFromFirebase(fileName);
         if (mounted && firebaseRecordings && Object.keys(firebaseRecordings).length > 0) {
           setRecordings(firebaseRecordings);
-          console.log('✅ Firebase 데이터로 동기화 완료');
+          console.log('✅ Firebase 녹음 동기화 완료');
+        }
+
+        // 형광펜 로드
+        const firebaseHighlights = await loadHighlightsFromFirebase(fileName);
+        if (mounted && firebaseHighlights && Object.keys(firebaseHighlights).length > 0) {
+          setHighlights(firebaseHighlights);
+          saveHighlights(fileName, firebaseHighlights); // localStorage도 업데이트
+          console.log('✅ Firebase 형광펜 동기화 완료');
         }
       } catch (error) {
-        console.error('Firebase 로드 중 오류:', error);
+        console.error('❌ Firebase 로드 중 오류:', error);
       }
     }
 
-    fetchRecordings();
+    fetchFirebaseData();
 
     return () => {
       mounted = false;

@@ -123,6 +123,27 @@ async function deleteReviewFromFirebase(reviewId) {
   }
 }
 
+async function loadReviewsFromFirebase() {
+  if (!firebaseDB) {
+    console.warn('⚠️ Firebase 미초기화, localStorage만 사용');
+    return [];
+  }
+
+  try {
+    console.log('📥 Firebase에서 감상문 로드 중...');
+    const snapshot = await firebaseDB.collection('reviews').get();
+    const firebaseReviews = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    console.log('✅ Firebase 감상문 로드 완료:', firebaseReviews.length + '개');
+    return firebaseReviews;
+  } catch (error) {
+    console.error('❌ Firebase 감상문 로드 실패:', error);
+    return [];
+  }
+}
+
 /* ────────── 유틸 ────────── */
 function loadReviews() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
@@ -688,6 +709,35 @@ function ReviewApp() {
     } catch (e) {
       console.error('Failed to load book info:', e);
     }
+  }, []);
+
+  // Firebase에서 감상문 동기화
+  useEffect(() => {
+    async function syncReviews() {
+      const firebaseReviews = await loadReviewsFromFirebase();
+      if (firebaseReviews.length > 0) {
+        const localReviews = loadReviews();
+
+        // Firebase와 localStorage 병합 (Firebase 우선)
+        const reviewMap = new Map();
+
+        // localStorage 데이터 먼저 추가
+        localReviews.forEach(review => {
+          reviewMap.set(review.id, review);
+        });
+
+        // Firebase 데이터로 덮어쓰기 (최신 데이터)
+        firebaseReviews.forEach(review => {
+          reviewMap.set(review.id, review);
+        });
+
+        const mergedReviews = Array.from(reviewMap.values());
+        setReviews(mergedReviews);
+        saveReviewsToStorage(mergedReviews); // localStorage도 업데이트
+        console.log('🔄 감상문 동기화 완료:', mergedReviews.length + '개');
+      }
+    }
+    syncReviews();
   }, []);
 
   // 초기화
