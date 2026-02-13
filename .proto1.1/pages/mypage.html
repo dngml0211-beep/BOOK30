@@ -5857,6 +5857,11 @@
         // === 출석 달력 렌더링 ===
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
+            if (!grid) {
+                console.warn('⚠️ calendar-grid 요소를 찾을 수 없습니다.');
+                return;
+            }
+
             const year = 2026;
             const month = 2; // 2월
 
