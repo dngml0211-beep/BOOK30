@@ -12,7 +12,7 @@
 <!-- Firebase SDK (Firestore only - 무료) -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-  import { getFirestore, collection, addDoc, query, where, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+  import { getFirestore, collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
   import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
   const firebaseConfig = {
@@ -41,8 +41,10 @@
   window.firebaseAuth = auth;
   window.firebaseUser = currentUser;
   window.firebaseModules = {
-    collection, addDoc, query, where, getDocs, deleteDoc, doc
+    collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc
   };
+  // firestoreExports는 firebaseModules의 별칭 (하위 호환성)
+  window.firestoreExports = window.firebaseModules;
   console.log('✅ Firebase 초기화 완료 (Firestore only - 무료)');
 </script>
 <style>
