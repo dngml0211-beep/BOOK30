@@ -149,7 +149,22 @@ function loadReviews() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 }
 function saveReviewsToStorage(reviews) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+  } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      console.warn('⚠️ localStorage 용량 초과');
+      // 오래된 데이터 일부 삭제
+      const recentReviews = reviews.slice(0, 10); // 최근 10개만 유지
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(recentReviews));
+        console.log('ℹ️ 최근 10개만 localStorage에 저장');
+      } catch (e) {
+        console.warn('⚠️ localStorage 저장 불가, Firebase만 사용');
+      }
+    }
+    throw error; // 에러를 다시 던져서 상위에서 처리
+  }
 }
 
 /* ══════════════════════════════════════
@@ -733,7 +748,14 @@ function ReviewApp() {
 
         const mergedReviews = Array.from(reviewMap.values());
         setReviews(mergedReviews);
-        saveReviewsToStorage(mergedReviews); // localStorage도 업데이트
+
+        // localStorage 업데이트 (용량 초과 시 무시)
+        try {
+          saveReviewsToStorage(mergedReviews);
+        } catch (error) {
+          console.warn('⚠️ localStorage 저장 실패, Firebase만 사용');
+        }
+
         console.log('🔄 감상문 동기화 완료:', mergedReviews.length + '개');
       }
     }
@@ -777,9 +799,20 @@ function ReviewApp() {
     }
 
     setReviews(updated);
-    saveReviewsToStorage(updated);
 
-    // Firebase에도 저장
+    // localStorage 저장 (용량 초과 시 무시)
+    try {
+      saveReviewsToStorage(updated);
+    } catch (error) {
+      if (error.name === 'QuotaExceededError') {
+        console.warn('⚠️ localStorage 용량 초과, Firebase만 사용합니다.');
+        // localStorage 초과 시 Firebase만 사용
+      } else {
+        console.error('localStorage 저장 실패:', error);
+      }
+    }
+
+    // Firebase에도 저장 (우선순위)
     saveReviewToFirebase(reviewData).catch(err => {
       console.error('Firebase 저장 중 오류:', err);
     });
@@ -803,7 +836,13 @@ function ReviewApp() {
   const deleteReview = (id) => {
     const updated = reviews.filter(r => r.id !== id);
     setReviews(updated);
-    saveReviewsToStorage(updated);
+
+    // localStorage 저장 (용량 초과 시 무시)
+    try {
+      saveReviewsToStorage(updated);
+    } catch (error) {
+      console.warn('⚠️ localStorage 저장 실패, Firebase만 사용');
+    }
 
     // Firebase에서도 삭제
     deleteReviewFromFirebase(id).catch(err => {
